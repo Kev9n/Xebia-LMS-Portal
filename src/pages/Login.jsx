@@ -11,7 +11,7 @@ import {
   Layers,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wordmark } from "@/components/brand/wordmark";
+import { Wordmark } from "@/components/brand/wordmark.jsx";
 import { PageEntrance, PageEntranceItem } from "@/components/ui/page-entrance";
 import { DEMO_STUDENTS, DEMO_TEACHERS } from "@/lib/demo-users";
 
