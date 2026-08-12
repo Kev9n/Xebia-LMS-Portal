@@ -670,11 +670,9 @@ refactor: Replace MetricCard with KpiCard for consistent styling
 
 | Name | Role | GitHub |
 |------|------|--------|
-| Mritunjai Singh | Full-Stack Developer / Project Lead | [@mritunjai-prog](https://github.com/mritunjai-prog) |
-| Manish Kumawat | Full-Stack Developer | [@ManishKumawat450](https://github.com/ManishKumawat450) |
-| Vijay Menaria | Full-Stack Developer | [@vijaymenaria04](https://github.com/vijaymenaria04) |
-| Vinit Menaria | Full-Stack Developer | [@Vinit1120](https://github.com/Vinit1120) |
-| Abhijeet Tiwari | Full-Stack Developer | [@Abhijeet0Tiwari](https://github.com/Abhijeet0Tiwari) |
+| X1 | Full-Stack Developer / Project Lead |
+| X2 | Full-Stack Developer | 
+
 
 ---
 
