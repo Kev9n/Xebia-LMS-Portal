@@ -1,7 +1,7 @@
 services:
   # ── API Gateway ──
   - type: web
-    name: xebia-api-gateway-mritunjai
+    name: xebia-api-gateway-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -10,19 +10,19 @@ services:
       - key: SERVER_PORT
         value: "8080"
       - key: SERVICES_USER
-        value: https://xebia-user-service-mritunjai.onrender.com
+        value: https://xebia-user-service-kev9n.onrender.com
       - key: SERVICES_COURSE
-        value: https://xebia-course-service-mritunjai.onrender.com
+        value: https://xebia-course-service-kev9n.onrender.com
       - key: SERVICES_BATCH
-        value: https://xebia-batch-service-mritunjai.onrender.com
+        value: https://xebia-batch-service-kev9n.onrender.com
       - key: SERVICES_ASSESSMENT
-        value: https://xebia-assessment-service-mritunjai.onrender.com
+        value: https://xebia-assessment-service-kev9n.onrender.com
       - key: SERVICES_EVENT
-        value: https://xebia-event-service-mritunjai.onrender.com
+        value: https://xebia-event-service-kev9n.onrender.com
 
   # ── User Service ──
   - type: web
-    name: xebia-user-service-mritunjai
+    name: xebia-user-service-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -32,24 +32,24 @@ services:
         value: "8081"
       - key: DB_HOST
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: database
       - key: DB_USERNAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: password
 
   # ── Course Service ──
   - type: web
-    name: xebia-course-service-mritunjai
+    name: xebia-course-service-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -59,24 +59,24 @@ services:
         value: "8084"
       - key: DB_HOST
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: database
       - key: DB_USERNAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: password
 
   # ── Batch Service ──
   - type: web
-    name: xebia-batch-service-mritunjai
+    name: xebia-batch-service-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -86,24 +86,24 @@ services:
         value: "8085"
       - key: DB_HOST
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: database
       - key: DB_USERNAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: password
 
   # ── Assessment Service ──
   - type: web
-    name: xebia-assessment-service-mritunjai
+    name: xebia-assessment-service-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -113,24 +113,24 @@ services:
         value: "8086"
       - key: DB_HOST
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: database
       - key: DB_USERNAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: password
 
   # ── Event Service ──
   - type: web
-    name: xebia-event-service-mritunjai
+    name: xebia-event-service-kev9n
     env: docker
     plan: free
     dockerContext: backend
@@ -140,23 +140,23 @@ services:
         value: "8087"
       - key: DB_HOST
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: database
       - key: DB_USERNAME
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: xebia-postgres-mritunjai
+          name: xebia-postgres-kev9n
           property: password
 
 databases:
-  - name: xebia-postgres-mritunjai
+  - name: xebia-postgres-kev9n
     databaseName: lms
     user: lms
     plan: free
