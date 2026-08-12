@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Wordmark } from "@/components/brand/wordmark";
 import { PageEntrance, PageEntranceItem } from "@/components/ui/page-entrance";
+import { DEMO_STUDENTS, DEMO_TEACHERS } from "@/lib/demo-users";
 
 const PORTALS = [
   { id: "teacher", label: "Trainer", icon: ShieldCheck },
@@ -21,7 +22,7 @@ const PORTALS = [
 ];
 
 export const Login = () => {
-  const { login, teachers, students, theme, toggleTheme } = useLMS();
+  const { login, theme, toggleTheme } = useLMS();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("teacher");
   const navigate = useNavigate();
@@ -66,15 +67,15 @@ export const Login = () => {
     }
   };
 
-  const demoTeachers = teachers.slice(0, 3);
-  const demoStudents = students.slice(0, 3);
+  const demoTeachers = DEMO_TEACHERS;
+  const demoStudents = DEMO_STUDENTS;
 
   const emailPlaceholder =
     role === "teacher"
-      ? "evelyn.stone@xebia-academy.com"
+      ? "kevin@xebia.com"
       : role === "admin"
         ? "admin@xebia.com"
-        : "student.name@xebia-student.com";
+        : "abhinay@xebia.com";
 
   return (
     <div className={`x-shell relative min-h-screen ${theme === "dark" ? "dark" : ""}`}>
@@ -214,7 +215,7 @@ export const Login = () => {
                   title="Trainers"
                   items={demoTeachers.map((t) => ({
                     id: t.id,
-                    name: t.name.split(" ")[1] || t.name.split(" ")[0],
+                    name: t.name,
                     sub: "Trainer",
                     avatar: t.avatar,
                     onClick: () => handleQuickLogin(t.email, "teacher"),
@@ -224,7 +225,7 @@ export const Login = () => {
                   title="Students"
                   items={demoStudents.map((s) => ({
                     id: s.id,
-                    name: s.name.split(" ")[0],
+                    name: s.name,
                     sub: `Batch ${(s.batches && s.batches[0]) || "B1"}`,
                     avatar: s.avatar,
                     onClick: () => handleQuickLogin(s.email, "student"),

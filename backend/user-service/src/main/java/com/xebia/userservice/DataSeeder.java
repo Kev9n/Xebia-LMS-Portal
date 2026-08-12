@@ -22,11 +22,11 @@ public class DataSeeder implements CommandLineRunner {
         if (existing.isEmpty()) {
             System.out.println("Seeding demo users...");
             List<User> demoUsers = List.of(
-                createUser("Mritunjai", "mritunjai@xebia.com", "teacher", "Engineering", "https://i.pravatar.cc/150?u=mritunjai"),
-                createUser("Manish", "manish@xebia.com", "teacher", "Engineering", "https://i.pravatar.cc/150?u=manish"),
-                createUser("Vijay", "vijay@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=vijay"),
-                createUser("Abhijeet", "abhijeet@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=abhijeet"),
-                createUser("Vinit", "vinit@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=vinit")
+                createUser("Kevin", "kevin@xebia.com", "teacher", "Engineering", "https://i.pravatar.cc/150?u=kevin-xebia"),
+                createUser("Nikhil", "nikhil@xebia.com", "teacher", "Engineering", "https://i.pravatar.cc/150?u=nikhil-xebia"),
+                createUser("Abhinay", "abhinay@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=abhinay-xebia"),
+                createUser("Khanoj", "khanoj@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=khanoj-xebia"),
+                createUser("Revanth", "revanth@xebia.com", "student", "Computer Science", "https://i.pravatar.cc/150?u=revanth-xebia")
             );
             UserService.BulkResult result = userService.createUsersBulk(demoUsers);
             System.out.println("Seeded " + result.getSuccessCount() + " users, " + result.getFailCount() + " failed");

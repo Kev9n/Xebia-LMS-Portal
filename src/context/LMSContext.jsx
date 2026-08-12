@@ -7,6 +7,7 @@ import {
   SubmissionService,
   AllocationService,
 } from "../services/api";
+import { DEMO_STUDENTS, DEMO_TEACHERS, resolveStudents, resolveTeachers } from "../lib/demo-users";
 
 const LMSContext = createContext(undefined);
 
@@ -30,9 +31,9 @@ export const LMSProvider = ({ children }) => {
         return raw ? JSON.parse(raw) : [];
       } catch { return []; }
     };
-    setTeachers(load("lms_teachers"));
+    setTeachers(load("lms_teachers").length ? load("lms_teachers") : DEMO_TEACHERS);
     setBatches(load("lms_batches"));
-    setStudents(load("lms_students"));
+    setStudents(load("lms_students").length ? load("lms_students") : DEMO_STUDENTS);
     setAssessments(load("lms_assessments"));
     setSubmissions(load("lms_submissions"));
     setCodingSubmissions(load("codingSubmissions"));
@@ -59,8 +60,8 @@ export const LMSProvider = ({ children }) => {
           return u;
         });
 
-        const teacherList = enrichedUsers.filter((u) => u.role === "teacher");
-        const studentList = enrichedUsers.filter((u) => u.role === "student");
+        const teacherList = resolveTeachers(enrichedUsers);
+        const studentList = resolveStudents(enrichedUsers);
         setTeachers(teacherList);
         setStudents(studentList);
         setBatches(b);
@@ -98,6 +99,8 @@ export const LMSProvider = ({ children }) => {
         });
       } catch (err) {
         console.error("Backend connection failed.", err);
+        setTeachers(DEMO_TEACHERS);
+        setStudents(DEMO_STUDENTS);
       }
     };
     fetchBackendData();
