@@ -1,0 +1,136 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lms
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: lms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms -d lms"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    environment:
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+      REDIS_HOST: redis
+      SERVICES_COURSE: http://course-service:8084
+      SERVICES_USER: http://user-service:8081
+      SERVICES_BATCH: http://batch-service:8085
+      SERVICES_ASSESSMENT: http://assessment-service:8086
+      SERVICES_EVENT: http://event-service:8087
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  course-service:
+    build:
+      context: .
+      dockerfile: course-service/Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_NAME: lms
+      DB_USERNAME: lms
+      DB_PASSWORD: lms
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    environment:
+      SERVER_PORT: 8081
+      DB_HOST: postgres
+      DB_NAME: lms
+      DB_USERNAME: lms
+      DB_PASSWORD: lms
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  batch-service:
+    build:
+      context: .
+      dockerfile: batch-service/Dockerfile
+    environment:
+      SERVER_PORT: 8085
+      DB_HOST: postgres
+      DB_NAME: lms
+      DB_USERNAME: lms
+      DB_PASSWORD: lms
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  assessment-service:
+    build:
+      context: .
+      dockerfile: assessment-service/Dockerfile
+    environment:
+      SERVER_PORT: 8086
+      DB_HOST: postgres
+      DB_NAME: lms
+      DB_USERNAME: lms
+      DB_PASSWORD: lms
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  event-service:
+    build:
+      context: .
+      dockerfile: event-service/Dockerfile
+    environment:
+      SERVER_PORT: 8087
+      DB_HOST: postgres
+      DB_NAME: lms
+      DB_USERNAME: lms
+      DB_PASSWORD: lms
+      JWT_SECRET: ${JWT_SECRET:-replace-with-at-least-32-characters}
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

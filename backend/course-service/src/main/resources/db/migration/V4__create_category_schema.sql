@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS course.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    icon VARCHAR(255),
+    color VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

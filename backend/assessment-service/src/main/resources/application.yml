@@ -1,0 +1,30 @@
+server:
+  port: ${SERVER_PORT:8086}
+
+spring:
+  application:
+    name: assessment-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Hanusuman11!}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+groq:
+  api:
+    key: ${GROQ_API_KEY:default}
+    url: https://api.groq.com/openai/v1/chat/completions

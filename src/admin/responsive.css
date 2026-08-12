@@ -1,0 +1,214 @@
+/* Mobile Responsiveness Styles */
+
+/* ── Tablet (≤1024px) ─────────────────────────────── */
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .charts-row {
+    grid-template-columns: 1fr !important;
+  }
+  .bottom-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Mobile (≤768px) ──────────────────────────────── */
+@media (max-width: 768px) {
+  /* Shell: use dynamic viewport height for mobile browsers */
+  .shell {
+    min-height: 100dvh !important;
+    min-height: -webkit-fill-available !important;
+  }
+
+  /* Hide sidebar off-screen by default on mobile */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Show sidebar ONLY when mobile-open class is present */
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    width: 260px !important;
+    box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  }
+
+  /* Force hidden when collapsed on mobile */
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 260px !important;
+  }
+
+  /* The main shell overlay when sidebar is open */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .charts-row {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .bottom-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header {
+    padding: 0 12px !important;
+    height: 52px !important;
+  }
+
+  .header-search {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .content {
+    padding: 16px !important;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-title {
+    font-size: 18px !important;
+  }
+
+  /* Breadcrumbs: allow truncation */
+  .breadcrumb {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  /* Tables: horizontal scroll */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modals: full-width on mobile with margin */
+  .modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto;
+  }
+
+  /* Toasts: full-width on mobile */
+  .toast-wrapper {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+  }
+
+  /* Donut charts: stack vertically */
+  .donut-wrap {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* KPI card: reduce padding */
+  .kpi-card {
+    padding: 16px !important;
+  }
+
+  .kpi-value {
+    font-size: 22px !important;
+  }
+
+  /* Card: reduce padding */
+  .card {
+    padding: 16px !important;
+  }
+
+  /* Filter bars: allow wrapping */
+  .filter-bar {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ── Small phones (≤480px) ────────────────────────── */
+@media (max-width: 480px) {
+  .content {
+    padding: 12px !important;
+  }
+
+  .kpi-grid {
+    gap: 8px !important;
+  }
+
+  .kpi-card {
+    padding: 12px !important;
+  }
+
+  .kpi-value {
+    font-size: 20px !important;
+  }
+
+  .kpi-icon {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .page-title {
+    font-size: 16px !important;
+  }
+
+  .card {
+    padding: 12px !important;
+  }
+
+  .card-title {
+    font-size: 13px !important;
+  }
+
+  /* Modal: nearly full screen on small phones */
+  .modal {
+    max-width: calc(100vw - 24px) !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-title {
+    font-size: 16px !important;
+  }
+
+  /* Table cells: smaller padding */
+  td {
+    padding: 8px !important;
+    font-size: 12px !important;
+  }
+
+  th {
+    padding: 8px !important;
+    font-size: 10px !important;
+  }
+}

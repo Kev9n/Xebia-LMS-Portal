@@ -1,0 +1,64 @@
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Runtime configuration and secrets
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-*.local.yml
+application-*.local.yaml
+
+# Logs
+logs/
+*.log
+
+# IDEs and editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker / local data
+docker-data/
+postgres-data/
+minio-data/
+
+# Test and coverage reports
+coverage/
+.nyc_output/
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Custom local exclusions
+maven/
+.m2/
+logs.txt

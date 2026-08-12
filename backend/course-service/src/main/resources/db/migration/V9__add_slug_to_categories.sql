@@ -1,0 +1,1 @@
+ALTER TABLE course.categories ADD COLUMN IF NOT EXISTS slug VARCHAR(240) NOT NULL DEFAULT 'default-slug';

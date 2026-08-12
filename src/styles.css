@@ -1,0 +1,567 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, sans-serif;
+  --font-display: "Sora", "Inter", sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+
+  --radius: 16px;
+  --radius-soft: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-3xl: 40px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-glow: var(--primary-glow);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-2: var(--accent-2);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Main Colors from palette */
+  --background: #F3F4F6; /* Light grey application background */
+  --foreground: #000000; /* Black */
+  
+  --card: #FFFFFF; /* White */
+  --card-foreground: #000000;
+  
+  --popover: #FFFFFF;
+  --popover-foreground: #000000;
+
+  --primary: #6C1D5F; /* Tranquil Velvet */
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #84117C; /* Bright Tr. Velvet */
+
+  --secondary: #DADCEA; /* Medium Bl.Grey */
+  --secondary-foreground: #4A1E47; /* Tranquil Velvet Dark */
+  
+  --muted: #DEDEDE; /* Light Grey */
+  --muted-foreground: #5A5A5A; /* Dark Grey */
+  
+  --accent: #84117C; /* Bright Tr. Velvet */
+  --accent-foreground: #FFFFFF;
+  
+  --accent-2: #01AC9F; /* Emerald */
+
+  --destructive: #FF6200; /* CTA Orange */
+  --destructive-foreground: #FFFFFF;
+  
+  --border: #DADCEA;
+  --input: #DADCEA;
+  --ring: #6C1D5F;
+
+  /* Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-shadow: 0 10px 40px -10px rgba(108, 29, 95, 0.18);
+
+  --gradient-brand: linear-gradient(
+    135deg,
+    #6C1D5F,
+    #84117C,
+    #01AC9F
+  );
+  --gradient-hero:
+    radial-gradient(60% 60% at 20% 10%, rgba(108, 29, 95, 0.15), transparent 60%),
+    radial-gradient(50% 50% at 90% 20%, rgba(132, 17, 124, 0.15), transparent 60%),
+    radial-gradient(60% 60% at 50% 100%, rgba(1, 172, 159, 0.15), transparent 60%);
+  --shadow-glow: 0 20px 60px -20px rgba(108, 29, 95, 0.45);
+  --shadow-elegant: 0 30px 80px -30px rgba(0, 0, 0, 0.15);
+
+  /* Chart Colors */
+  --chart-1: #5C4F61;
+  --chart-2: #855889;
+  --chart-3: #533754;
+  --chart-4: #91759E;
+  --chart-5: #4A1E47;
+}
+
+.dark {
+  --background: #000000; /* Black from neutral palette */
+  --foreground: #F7F8FC;
+  
+  --card: #151515; /* Very dark grey for cards to contrast against black */
+  --card-foreground: #F7F8FC;
+  
+  --popover: #151515;
+  --popover-foreground: #F7F8FC;
+
+  --primary: #84117C; /* Bright Tr. Velvet for better contrast */
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #6C1D5F;
+
+  --secondary: #4A1E47; /* Tranquil Velvet Dark */
+  --secondary-foreground: #D3CCEC;
+  
+  --muted: #5A5A5A; /* Dark Grey from neutral palette */
+  --muted-foreground: #DEDEDE; /* Light Grey from neutral palette */
+  
+  --accent: #01AC9F; /* Emerald */
+  --accent-foreground: #FFFFFF;
+  
+  --accent-2: #6C1D5F;
+
+  --destructive: #FF6200; /* CTA Orange */
+  --destructive-foreground: #FFFFFF;
+  
+  --border: #5A5A5A; /* Dark Grey */
+  --input: #5A5A5A;
+  --ring: #84117C;
+
+  --glass-bg: rgba(20, 20, 20, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+
+  --gradient-hero:
+    radial-gradient(60% 60% at 20% 10%, rgba(132, 17, 124, 0.2), transparent 60%),
+    radial-gradient(50% 50% at 90% 20%, rgba(1, 172, 159, 0.15), transparent 60%),
+    radial-gradient(60% 60% at 50% 100%, rgba(108, 29, 95, 0.2), transparent 60%);
+
+  /* Chart Colors for dark mode - Keep same as light mode or use the palette */
+  --chart-1: #9D92B2;
+  --chart-2: #D3CCEC;
+  --chart-3: #B8AFCF;
+  --chart-4: #91759E;
+  --chart-5: #855889;
+}
+
+/* ── Native select / option dark mode ───────────────────── */
+select {
+  color: var(--foreground);
+}
+.dark select {
+  color-scheme: dark;
+  color: oklch(0.97 0.01 320);
+}
+/* Make option dropdowns dark in dark mode (works in Firefox & Edge) */
+.dark option,
+.dark optgroup {
+  background-color: oklch(0.2 0.04 290) !important;
+  color: oklch(0.97 0.01 320) !important;
+}
+/* Chromium: target select elements that have a solid bg (modal forms) */
+html.dark select[class*="bg-background"],
+html.dark select[class*="bg-card"] {
+  background-color: oklch(0.2 0.04 290) !important;
+  color: oklch(0.97 0.01 320) !important;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    font-weight: 400;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: var(--text-base);
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  h1 { font-size: var(--text-2xl); line-height: 1.1; }
+  h2 { font-size: var(--text-xl); line-height: 1.15; }
+  h3 { font-size: var(--text-lg); line-height: 1.25; font-weight: 600; }
+  h4 { font-size: var(--text-base); line-height: 1.3; font-weight: 600; }
+
+  button,
+  input,
+  textarea,
+  select,
+  .btn,
+  .button,
+  .x-btn,
+  .x-input,
+  .x-panel,
+  .x-card {
+    border-radius: var(--radius-soft);
+  }
+
+  button,
+  .x-btn {
+    font-family: var(--font-sans);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  button:active,
+  .x-btn:active,
+  .x-card:active {
+    transform: scale(0.98);
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  .x-btn:focus-visible,
+  .x-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 28%, transparent);
+    border-color: var(--accent);
+  }
+
+  .x-shell {
+    min-height: 100vh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  .x-split-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  @media (min-width: 1024px) {
+    .x-split-shell {
+      grid-template-columns: minmax(360px, 44%) minmax(420px, 56%);
+    }
+  }
+
+  .x-split-brand {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--gradient-brand);
+    color: var(--primary-foreground);
+    overflow: hidden;
+  }
+
+  .x-split-brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--gradient-hero);
+    pointer-events: none;
+  }
+
+  .x-split-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-background);
+  }
+
+  @media (min-width: 1024px) {
+    .x-split-form {
+      padding: var(--space-4) clamp(2rem, 6vw, 5rem);
+    }
+  }
+
+  .x-panel {
+    background: var(--color-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius-soft);
+    overflow: hidden;
+  }
+
+  .x-panel-strong {
+    background: color-mix(in oklab, var(--color-primary) 10%, var(--color-card) 90%);
+    border-color: rgba(108, 29, 95, 0.16);
+  }
+
+  .x-card {
+    background: var(--color-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-soft);
+    box-shadow: 0 16px 30px -20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .x-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 45px -24px rgba(0, 0, 0, 0.14);
+  }
+
+  .x-segmented {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    background: var(--muted);
+    padding: 4px;
+    border-radius: var(--radius-soft);
+    border: 1px solid var(--border);
+  }
+
+  .x-segmented button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted-foreground);
+    font-weight: 600;
+    font-size: var(--text-xs);
+    padding: 0.75rem 0.5rem;
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: calc(var(--radius-soft) - 4px);
+    cursor: pointer;
+  }
+
+  .x-segmented button:hover:not(.active) {
+    color: var(--foreground);
+    background: color-mix(in oklab, var(--card) 80%, transparent);
+  }
+
+  .x-segmented button.active {
+    background: var(--accent);
+    color: var(--accent-foreground);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+
+  .x-segmented button:active {
+    transform: scale(0.98);
+  }
+
+  .x-input {
+    background: var(--color-card);
+    border: 1px solid var(--border);
+    padding: 1rem 1.1rem;
+    width: 100%;
+    font-size: 1rem;
+    color: var(--color-foreground);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .x-btn-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid transparent;
+    box-shadow: 0 16px 30px -18px rgba(108, 29, 95, 0.18);
+  }
+
+  .x-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 35px -18px rgba(108, 29, 95, 0.22);
+  }
+
+  .x-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .x-hero-title {
+    font-size: clamp(var(--text-xl), 3.5vw, var(--text-2xl));
+    line-height: 1.05;
+    font-weight: 700;
+    font-family: var(--font-display);
+  }
+
+  .x-hero-copy {
+    font-size: var(--text-sm);
+    line-height: 1.75;
+    max-width: 36rem;
+    font-weight: 400;
+    opacity: 0.9;
+  }
+
+  .x-micro-copy {
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+  }
+
+  .x-section-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+  }
+
+  .x-section-subtitle {
+    font-size: var(--text-sm);
+    color: var(--muted-foreground);
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  .x-wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    letter-spacing: -0.02em;
+  }
+
+  .x-wordmark img {
+    height: 2rem;
+    width: auto;
+  }
+
+  .x-bento-grid {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .x-bento-span-3 { grid-column: span 12; }
+  .x-bento-span-4 { grid-column: span 12; }
+  .x-bento-span-6 { grid-column: span 12; }
+  .x-bento-span-8 { grid-column: span 12; }
+  .x-bento-span-12 { grid-column: span 12; }
+
+  @media (min-width: 640px) {
+    .x-bento-span-3 { grid-column: span 6; }
+    .x-bento-span-4 { grid-column: span 6; }
+    .x-bento-span-6 { grid-column: span 6; }
+    .x-bento-span-8 { grid-column: span 12; }
+  }
+
+  @media (min-width: 1024px) {
+    .x-bento-span-3 { grid-column: span 3; }
+    .x-bento-span-4 { grid-column: span 4; }
+    .x-bento-span-6 { grid-column: span 6; }
+    .x-bento-span-8 { grid-column: span 8; }
+  }
+
+  .x-dashboard-shell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}
+
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  .glass-strong {
+    background: color-mix(in oklab, var(--card) 70%, transparent);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--glass-border);
+  }
+  .text-gradient {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-mesh {
+    background-image: var(--gradient-hero);
+  }
+  .btn-hero {
+    background: var(--gradient-brand);
+    color: var(--color-primary-foreground);
+    box-shadow: var(--shadow-glow);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+  }
+  .btn-hero:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+  }
+  .ring-focus:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.97);
+  }
+}
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+.animate-blob {
+  animation: blob 18s ease-in-out infinite;
+}
