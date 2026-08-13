@@ -8,16 +8,42 @@ import {
   getCourseProgressPercent,
 } from "@/lib/course-progress-store";
 import {
-  DEMO_CATEGORIES,
-  DEMO_COURSES,
+  addContentItemLocal,
+  addModuleLocal,
+  addSubmoduleLocal,
+  createBulkAllocationsLocal,
+  createCategoryLocal,
+  createCourseLocal,
+  deleteAllocationLocal,
+  deleteCategoryLocal,
+  deleteContentItemLocal,
+  deleteCourseLocal,
+  deleteModuleLocal,
+  deleteSubmoduleLocal,
+  getDemoUsers,
+  getLocalCategory,
+  getLocalCategoryBySlug,
+  getLocalCourse,
+  getLocalCourseBySlug,
+  getLocalHierarchy,
+  getMergedAllocations,
+  getMergedCategories,
+  getMergedCourses,
+  mergeHierarchyWithLocal,
+  setAdminOfflineMode,
+  updateCategoryLocal,
+  updateContentItemLocal,
+  updateCourseLocal,
+  updateModuleLocal,
+  updateSubmoduleLocal,
+} from "@/lib/admin-catalog-store";
+import {
   DEMO_TENANT_ID,
   DEMO_ASSESSMENTS,
   DEMO_BATCHES,
   DEMO_SUBMISSIONS,
   getDemoEnrolledCourses,
   getReactCourseHierarchy,
-  mergeCategories,
-  mergeCourses,
 } from "@/lib/demo-seed-data";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
@@ -141,16 +167,19 @@ export const CourseService = {
   getCourses: async () => {
     try {
       const data = await fetchApi("/courses", { cache: "no-store" });
-      return mergeCourses(data);
+      setAdminOfflineMode(false);
+      return getMergedCourses(data);
     } catch {
-      return DEMO_COURSES;
+      return getMergedCourses(null);
     }
   },
   getCourseById: async (id) => {
     try {
-      return await fetchApi(`/courses/${id}`, { cache: "no-store" });
+      const data = await fetchApi(`/courses/${id}`, { cache: "no-store" });
+      setAdminOfflineMode(false);
+      return data;
     } catch {
-      return DEMO_COURSES.find((c) => String(c.id) === String(id)) || null;
+      return getLocalCourse(id);
     }
   },
   getCourseHierarchy: async (id) => {
@@ -170,58 +199,172 @@ export const CourseService = {
         (acc, m) => acc + (m.submodules?.length || 0),
         0,
       );
-      return mappedCourse;
+      setAdminOfflineMode(false);
+      return mergeHierarchyWithLocal(id, mappedCourse) || mappedCourse;
     } catch {
-      if (String(id) === "50000000-0000-0000-0000-000000000002") {
-        return getReactCourseHierarchy();
-      }
-      return null;
+      return getLocalHierarchy(id);
     }
   },
   getCourseBySlug: async (slug) => {
     try {
       const all = await fetchApi("/courses");
-      // If course doesn't have a slug, match by lowercased title
       const course = all.find(
         (c) =>
           c.slug === slug ||
           (c.title && c.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug),
       );
-      if (!course) throw new Error("Course not found");
-      return course;
-    } catch (err) {
-      console.warn("Falling back to mock for getCourseBySlug", err);
-      throw err;
+      if (course) {
+        setAdminOfflineMode(false);
+        return course;
+      }
+    } catch {
+      /* fall through */
+    }
+    const local = getLocalCourseBySlug(slug);
+    if (local) return local;
+    throw new Error("Course not found");
+  },
+  createCourse: async (data) => {
+    try {
+      const result = await fetchApi("/courses", { method: "POST", body: JSON.stringify(data) });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return createCourseLocal(data);
     }
   },
-  createCourse: (data) => fetchApi("/courses", { method: "POST", body: JSON.stringify(data) }),
-  updateCourse: (id, data) =>
-    fetchApi(`/courses/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteCourse: (id) => fetchApi(`/courses/${id}`, { method: "DELETE" }),
-  addModule: (courseId, data) =>
-    fetchApi(`/courses/${courseId}/modules`, { method: "POST", body: JSON.stringify(data) }),
-  updateModule: (moduleId, data) =>
-    fetchApi(`/courses/modules/${moduleId}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteModule: (moduleId) => fetchApi(`/courses/modules/${moduleId}`, { method: "DELETE" }),
-  addSubmodule: (courseId, moduleId, data) =>
-    fetchApi(`/courses/${courseId}/modules/${moduleId}/submodules`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-  updateSubmodule: (submoduleId, data) =>
-    fetchApi(`/courses/submodules/${submoduleId}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteSubmodule: (submoduleId) =>
-    fetchApi(`/courses/submodules/${submoduleId}`, { method: "DELETE" }),
-  addContentItem: (courseId, data) =>
-    fetchApi(`/courses/${courseId}/content-items`, { method: "POST", body: JSON.stringify(data) }),
-  updateContentItem: (contentId, data) =>
-    fetchApi(`/courses/content-items/${contentId}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteContentItem: (contentId) =>
-    fetchApi(`/courses/content-items/${contentId}`, { method: "DELETE" }),
+  updateCourse: async (id, data) => {
+    try {
+      const result = await fetchApi(`/courses/${id}`, { method: "PUT", body: JSON.stringify(data) });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return updateCourseLocal(id, data);
+    }
+  },
+  deleteCourse: async (id) => {
+    try {
+      await fetchApi(`/courses/${id}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteCourseLocal(id);
+    }
+  },
+  addModule: async (courseId, data) => {
+    try {
+      const result = await fetchApi(`/courses/${courseId}/modules`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return addModuleLocal(courseId, data);
+    }
+  },
+  updateModule: async (moduleId, data) => {
+    try {
+      const result = await fetchApi(`/courses/modules/${moduleId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return updateModuleLocal(moduleId, data);
+    }
+  },
+  deleteModule: async (moduleId) => {
+    try {
+      await fetchApi(`/courses/modules/${moduleId}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteModuleLocal(moduleId);
+    }
+  },
+  addSubmodule: async (courseId, moduleId, data) => {
+    try {
+      const result = await fetchApi(`/courses/${courseId}/modules/${moduleId}/submodules`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return addSubmoduleLocal(courseId, moduleId, data);
+    }
+  },
+  updateSubmodule: async (submoduleId, data) => {
+    try {
+      const result = await fetchApi(`/courses/submodules/${submoduleId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return updateSubmoduleLocal(submoduleId, data);
+    }
+  },
+  deleteSubmodule: async (submoduleId) => {
+    try {
+      await fetchApi(`/courses/submodules/${submoduleId}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteSubmoduleLocal(submoduleId);
+    }
+  },
+  addContentItem: async (courseId, data) => {
+    try {
+      const result = await fetchApi(`/courses/${courseId}/content-items`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return addContentItemLocal(courseId, data);
+    }
+  },
+  updateContentItem: async (contentId, data) => {
+    try {
+      const result = await fetchApi(`/courses/content-items/${contentId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return updateContentItemLocal(contentId, data);
+    }
+  },
+  deleteContentItem: async (contentId) => {
+    try {
+      await fetchApi(`/courses/content-items/${contentId}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteContentItemLocal(contentId);
+    }
+  },
 };
 
 export const UserService = {
-  getUsers: (role) => fetchApi(`/v1/users${role ? "?role=" + role : ""}`),
+  getUsers: async (role) => {
+    try {
+      const data = await fetchApi(`/v1/users${role ? "?role=" + role : ""}`);
+      if (Array.isArray(data) && data.length > 0) {
+        setAdminOfflineMode(false);
+        return data;
+      }
+    } catch {
+      /* fall through */
+    }
+    return getDemoUsers(role);
+  },
   createUser: (data) => fetchApi("/v1/users", { method: "POST", body: JSON.stringify(data) }),
   deleteUser: (id) => fetchApi(`/v1/users/${id}`, { method: "DELETE" }),
 };
@@ -241,13 +384,34 @@ export const BatchService = {
   getBatches: async () => {
     try {
       const data = await fetchApi("/v1/batches");
-      if (Array.isArray(data) && data.length > 0) return data;
-      return DEMO_BATCHES;
+      if (Array.isArray(data) && data.length > 0) {
+        setAdminOfflineMode(false);
+        return data;
+      }
     } catch {
-      return DEMO_BATCHES;
+      /* fall through */
+    }
+    return DEMO_BATCHES;
+  },
+  createBatch: async (data) => {
+    try {
+      const result = await fetchApi("/v1/batches", { method: "POST", body: JSON.stringify(data) });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      const batch = {
+        id: crypto.randomUUID?.() || `batch-${Date.now()}`,
+        ...data,
+        status: data.status || "active",
+        _local: true,
+      };
+      const store = JSON.parse(localStorage.getItem("lms_admin_catalog") || "{}");
+      store.batches = [...(store.batches || []), batch];
+      localStorage.setItem("lms_admin_catalog", JSON.stringify(store));
+      setAdminOfflineMode(true);
+      return batch;
     }
   },
-  createBatch: (data) => fetchApi("/v1/batches", { method: "POST", body: JSON.stringify(data) }),
   updateBatch: (id, data) =>
     fetchApi(`/v1/batches/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteBatch: (id) => fetchApi(`/v1/batches/${id}`, { method: "DELETE" }),
@@ -351,66 +515,136 @@ export const CategoryService = {
   getCategories: async () => {
     try {
       const data = await fetchApi("/categories");
-      return mergeCategories(data);
+      setAdminOfflineMode(false);
+      return getMergedCategories(data);
     } catch {
-      return DEMO_CATEGORIES;
+      return getMergedCategories(null);
     }
   },
   getCategoryById: async (id) => {
     try {
       const all = await fetchApi("/categories");
       const cat = all.find((c) => String(c.id) === String(id));
-      if (!cat) throw new Error("Category not found");
-      return cat;
-    } catch (err) {
-      console.warn("Falling back to mock for getCategoryById", err);
-      throw err;
+      if (cat) {
+        setAdminOfflineMode(false);
+        return cat;
+      }
+    } catch {
+      /* fall through */
     }
+    const local = getLocalCategory(id);
+    if (local) return local;
+    throw new Error("Category not found");
   },
   getCategoryBySlug: async (slug) => {
     try {
       const all = await fetchApi("/categories");
-      // Some categories might have actual slug fields. If not, match by name.
       const cat = all.find(
         (c) =>
           c.slug === slug || (c.name && c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug),
       );
-      if (!cat) throw new Error("Category not found");
-      return cat;
-    } catch (err) {
-      console.warn("Falling back to mock for getCategoryBySlug", err);
-      throw err;
+      if (cat) {
+        setAdminOfflineMode(false);
+        return cat;
+      }
+    } catch {
+      /* fall through */
     }
+    const local = getLocalCategoryBySlug(slug);
+    if (local) return local;
+    throw new Error("Category not found");
   },
   createCategory: async (data) => {
-    return await fetchApi("/categories", { method: "POST", body: JSON.stringify(data) });
+    try {
+      const result = await fetchApi("/categories", { method: "POST", body: JSON.stringify(data) });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return createCategoryLocal(data);
+    }
   },
   updateCategory: async (id, data) => {
-    return await fetchApi(`/categories/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    try {
+      const result = await fetchApi(`/categories/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return updateCategoryLocal(id, data);
+    }
   },
   deleteCategory: async (id) => {
-    await fetchApi(`/categories/${id}`, { method: "DELETE" });
-    return true;
+    try {
+      await fetchApi(`/categories/${id}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteCategoryLocal(id);
+    }
   },
 };
 
 export const AllocationService = {
-  getAllocations: (filters = {}) => {
-    const params = new URLSearchParams();
-    if (filters.trainerId) params.append("trainerId", filters.trainerId);
-    if (filters.batchId) params.append("batchId", filters.batchId);
-    if (filters.courseId) params.append("courseId", filters.courseId);
-    if (filters.university) params.append("university", filters.university);
-    if (filters.status) params.append("status", filters.status);
-    const qs = params.toString();
-    return fetchApi(`/v1/allocations${qs ? "?" + qs : ""}`);
+  getAllocations: async (filters = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (filters.trainerId) params.append("trainerId", filters.trainerId);
+      if (filters.batchId) params.append("batchId", filters.batchId);
+      if (filters.courseId) params.append("courseId", filters.courseId);
+      if (filters.university) params.append("university", filters.university);
+      if (filters.status) params.append("status", filters.status);
+      const qs = params.toString();
+      const data = await fetchApi(`/v1/allocations${qs ? "?" + qs : ""}`);
+      setAdminOfflineMode(false);
+      return getMergedAllocations(data);
+    } catch {
+      const local = getMergedAllocations([]);
+      if (filters.batchId) {
+        return local.filter((a) => String(a.batchId) === String(filters.batchId));
+      }
+      if (filters.trainerId) {
+        return local.filter((a) => String(a.trainerId) === String(filters.trainerId));
+      }
+      return local;
+    }
   },
   getAllocationById: (id) => fetchApi(`/v1/allocations/${id}`),
-  createAllocation: (data) => fetchApi("/v1/allocations", { method: "POST", body: JSON.stringify(data) }),
-  updateAllocation: (id, data) => fetchApi(`/v1/allocations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteAllocation: (id) => fetchApi(`/v1/allocations/${id}`, { method: "DELETE" }),
-  deleteAllocationsByBatch: (batchId) => fetchApi(`/v1/allocations/batch/${batchId}`, { method: "DELETE" }),
-  createBulkAllocations: (allocations) => fetchApi("/v1/allocations/bulk", { method: "POST", body: JSON.stringify(allocations) }),
+  createAllocation: async (data) => {
+    try {
+      const result = await fetchApi("/v1/allocations", { method: "POST", body: JSON.stringify(data) });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return createBulkAllocationsLocal([data])[0];
+    }
+  },
+  updateAllocation: (id, data) =>
+    fetchApi(`/v1/allocations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteAllocation: async (id) => {
+    try {
+      await fetchApi(`/v1/allocations/${id}`, { method: "DELETE" });
+      setAdminOfflineMode(false);
+      return true;
+    } catch {
+      return deleteAllocationLocal(id);
+    }
+  },
+  deleteAllocationsByBatch: (batchId) =>
+    fetchApi(`/v1/allocations/batch/${batchId}`, { method: "DELETE" }),
+  createBulkAllocations: async (allocations) => {
+    try {
+      const result = await fetchApi("/v1/allocations/bulk", {
+        method: "POST",
+        body: JSON.stringify(allocations),
+      });
+      setAdminOfflineMode(false);
+      return result;
+    } catch {
+      return createBulkAllocationsLocal(allocations);
+    }
+  },
   getDashboardSummary: () => fetchApi("/v1/allocations/dashboard"),
   getAnalytics: () => fetchApi("/v1/allocations/analytics"),
   getTrainerAllocations: (trainerId) => fetchApi(`/v1/allocations/trainer/${trainerId}`),

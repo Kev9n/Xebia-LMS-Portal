@@ -8,6 +8,7 @@ import { AllocationService, UserService, BatchService, CourseService } from "@/s
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useRouter } from "@tanstack/react-router";
 import { clsx } from "clsx";
+import { DEMO_TEACHERS } from "@/lib/demo-users";
 
 const STEPS = [
   { id: 1, title: "Select Batch", icon: BookOpen, description: "Choose a batch" },
@@ -53,7 +54,8 @@ export default function AllocationWizard() {
       ]);
 
       setBatches(Array.isArray(batchData) ? batchData : []);
-      setTrainers(Array.isArray(trainerData) ? trainerData : []);
+      const trainerList = Array.isArray(trainerData) && trainerData.length > 0 ? trainerData : DEMO_TEACHERS;
+      setTrainers(trainerList);
       setCourses(Array.isArray(courseData) ? courseData : []);
     } catch (err) {
       console.error("Failed to load data:", err);
@@ -63,10 +65,7 @@ export default function AllocationWizard() {
   };
 
   const filteredBatches = batches.filter((b) => {
-    // Only show batches that have a valid creator still in the system
-    if (!b.createdBy || b.createdBy.trim() === "") return false;
-    if (!trainers.find((t) => t.id === b.createdBy)) return false;
-    if (search) return (b.name || "").toLowerCase().includes(search.toLowerCase());
+    if (search && !(b.name || "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -119,7 +118,7 @@ export default function AllocationWizard() {
   const canProceed = () => {
     switch (currentStep) {
       case 1: return !!selectedBatch;
-      case 2: return !!selectedTrainer && !!batchCreatorTrainer;
+      case 2: return !!selectedTrainer;
       case 3: return selectedCourses.length > 0;
       case 4: return !!academicSession;
       default: return false;

@@ -334,28 +334,44 @@ export default function HierarchyBuilder({ course }) {
     e.preventDefault();
     if (!selectedModuleId || !editSubmoduleId) return;
     if (editContentId) {
-      setModules(
-        modules.map((mod) =>
-          mod.id === selectedModuleId
-            ? {
-                ...mod,
-                submodules: mod.submodules.map((sub) =>
-                  sub.id === editSubmoduleId
-                    ? {
-                        ...sub,
-                        contentBlocks: sub.contentBlocks.map((c) =>
-                          c.id === editContentId ? { ...c, ...contentForm } : c,
-                        ),
-                      }
-                    : sub,
-                ),
-              }
-            : mod,
-        ),
-      );
-      setEditContentId(null);
-      setShowContentForm(false);
-      addToast("Content Updated", "success");
+      try {
+        const payload = {
+          moduleId: selectedModuleId,
+          subModuleId: editSubmoduleId,
+          title: contentForm.title,
+          type: contentForm.type,
+          storageRef:
+            contentForm.type === "VIDEO"
+              ? contentForm.videoUrl
+              : contentForm.documentUrl || contentForm.textContent,
+          position: contentForm.position || 1,
+        };
+        const updated = await CourseService.updateContentItem(editContentId, payload);
+        setModules(
+          modules.map((mod) =>
+            mod.id === selectedModuleId
+              ? {
+                  ...mod,
+                  submodules: mod.submodules.map((sub) =>
+                    sub.id === editSubmoduleId
+                      ? {
+                          ...sub,
+                          contentBlocks: sub.contentBlocks.map((c) =>
+                            c.id === editContentId ? { ...c, ...updated, ...contentForm } : c,
+                          ),
+                        }
+                      : sub,
+                  ),
+                }
+              : mod,
+          ),
+        );
+        setEditContentId(null);
+        setShowContentForm(false);
+        addToast("Content Updated", "success");
+      } catch (err) {
+        addToast("Failed to update content", "error");
+      }
       return;
     }
     try {

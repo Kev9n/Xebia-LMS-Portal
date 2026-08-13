@@ -3,7 +3,7 @@ import { Outlet } from "@tanstack/react-router";
 import { UnifiedSidebar } from "./unified-sidebar";
 import { StudentNavbar } from "./student-navbar";
 import { Header as AdminHeader } from "@/admin/components/layout/Header";
-import { useAppStore } from "@/admin/store/useAppStore";
+import { AdminOfflineBanner } from "@/admin/components/AdminOfflineBanner";
 
 export function UnifiedLayout({ portalType = "student" }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -36,6 +36,7 @@ export function UnifiedLayout({ portalType = "student" }) {
             </div>
           ) : (
             <div className="p-4 md:p-8">
+              <AdminOfflineBanner />
               <Outlet />
             </div>
           )}
