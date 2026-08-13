@@ -6,6 +6,7 @@ import { BookOpen, Calendar, Award, Bell, Play, FileText, BarChart3 } from "luci
 import { WelcomeBanner } from "@/features/student/components/dashboard/WelcomeBanner";
 import { StatCard } from "@/features/student/components/dashboard/StatCard";
 import { ContinueLearning } from "@/features/student/components/dashboard/ContinueLearning";
+import { enrolledCourses } from "@/features/student/mocks/dummy-data";
 import { LearningActivityChart } from "@/features/student/components/charts/LearningActivityChart";
 import { SubjectPerformanceChart } from "@/features/student/components/charts/SubjectPerformanceChart";
 import { PageEntrance, PageEntranceItem } from "@/components/ui/page-entrance";
@@ -136,7 +137,7 @@ function DashboardHome() {
 
       {enrolledBatches.length > 0 && (
         <PageEntranceItem>
-          <ContinueLearning courses={enrolledBatches.map((b) => ({ id: b.id, title: b.name, progress: 0 }))} />
+          <ContinueLearning courses={enrolledCourses} />
         </PageEntranceItem>
       )}
     </PageEntrance>

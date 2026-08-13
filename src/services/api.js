@@ -1,4 +1,16 @@
 import { TEMPORARY_STUDENT_ID } from "@/config/student-identity";
+import {
+  DEMO_CATEGORIES,
+  DEMO_COURSES,
+  DEMO_TENANT_ID,
+  DEMO_ASSESSMENTS,
+  DEMO_BATCHES,
+  DEMO_SUBMISSIONS,
+  getDemoEnrolledCourses,
+  getReactCourseHierarchy,
+  mergeCategories,
+  mergeCourses,
+} from "@/lib/demo-seed-data";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
@@ -8,7 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080
 async function fetchApi(endpoint, options = {}) {
   const headers = {
     "Content-Type": "application/json",
-    "X-Tenant-Id": "123e4567-e89b-12d3-a456-426614174000",
+    "X-Tenant-Id": DEMO_TENANT_ID,
     "X-User-Id": TEMPORARY_STUDENT_ID,
     ...options.headers,
   };
@@ -38,7 +50,21 @@ export const EnrollmentService = {
   enroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "POST" }),
   unenroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "DELETE" }),
   getStatus: (courseId) => fetchApi(`/enrollments/${courseId}/status`),
-  getMyCourses: () => fetchApi("/enrollments/my-courses"),
+  getMyCourses: async () => {
+    try {
+      const data = await fetchApi("/enrollments/my-courses");
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map((item) => ({
+          ...item,
+          id: item.id || item.courseId,
+          progress: item.progress ?? 0,
+        }));
+      }
+    } catch {
+      /* fall through to demo enrollments */
+    }
+    return getDemoEnrolledCourses();
+  },
 };
 
 export const ProgressService = {
@@ -57,25 +83,45 @@ export const ProgressService = {
 };
 
 export const CourseService = {
-  getCourses: () => fetchApi("/courses", { cache: "no-store" }),
-  getCourseById: (id) => fetchApi(`/courses/${id}`, { cache: "no-store" }),
+  getCourses: async () => {
+    try {
+      const data = await fetchApi("/courses", { cache: "no-store" });
+      return mergeCourses(data);
+    } catch {
+      return DEMO_COURSES;
+    }
+  },
+  getCourseById: async (id) => {
+    try {
+      return await fetchApi(`/courses/${id}`, { cache: "no-store" });
+    } catch {
+      return DEMO_COURSES.find((c) => String(c.id) === String(id)) || null;
+    }
+  },
   getCourseHierarchy: async (id) => {
-    const dto = await fetchApi(`/courses/${id}/hierarchy`, { cache: "no-store" });
-    if (!dto) return null;
-    const mappedCourse = { ...dto.course };
-    mappedCourse.modules = (dto.modules || []).map((mDto) => ({
-      ...mDto.module,
-      submodules: (mDto.submodules || []).map((sDto) => ({
-        ...sDto.submodule,
-        contentBlocks: sDto.contentBlocks || [],
-      })),
-    }));
-    mappedCourse.modulesCount = mappedCourse.modules.length;
-    mappedCourse.submodulesCount = mappedCourse.modules.reduce(
-      (acc, m) => acc + (m.submodules?.length || 0),
-      0,
-    );
-    return mappedCourse;
+    try {
+      const dto = await fetchApi(`/courses/${id}/hierarchy`, { cache: "no-store" });
+      if (!dto) throw new Error("Empty hierarchy");
+      const mappedCourse = { ...dto.course };
+      mappedCourse.modules = (dto.modules || []).map((mDto) => ({
+        ...mDto.module,
+        submodules: (mDto.submodules || []).map((sDto) => ({
+          ...sDto.submodule,
+          contentBlocks: sDto.contentBlocks || [],
+        })),
+      }));
+      mappedCourse.modulesCount = mappedCourse.modules.length;
+      mappedCourse.submodulesCount = mappedCourse.modules.reduce(
+        (acc, m) => acc + (m.submodules?.length || 0),
+        0,
+      );
+      return mappedCourse;
+    } catch {
+      if (String(id) === "50000000-0000-0000-0000-000000000002") {
+        return getReactCourseHierarchy();
+      }
+      return null;
+    }
   },
   getCourseBySlug: async (slug) => {
     try {
@@ -137,7 +183,15 @@ export const TrainerCascadeService = {
 };
 
 export const BatchService = {
-  getBatches: () => fetchApi("/v1/batches"),
+  getBatches: async () => {
+    try {
+      const data = await fetchApi("/v1/batches");
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEMO_BATCHES;
+    } catch {
+      return DEMO_BATCHES;
+    }
+  },
   createBatch: (data) => fetchApi("/v1/batches", { method: "POST", body: JSON.stringify(data) }),
   updateBatch: (id, data) =>
     fetchApi(`/v1/batches/${id}`, { method: "PUT", body: JSON.stringify(data) }),
@@ -147,7 +201,15 @@ export const BatchService = {
 };
 
 export const AssessmentService = {
-  getAssessments: () => fetchApi("/v1/assessments"),
+  getAssessments: async () => {
+    try {
+      const data = await fetchApi("/v1/assessments");
+      if (Array.isArray(data) && data.length > 0) return data;
+      return DEMO_ASSESSMENTS;
+    } catch {
+      return DEMO_ASSESSMENTS;
+    }
+  },
   createAssessment: (data) =>
     fetchApi("/v1/assessments", { method: "POST", body: JSON.stringify(data) }),
   updateAssessment: (id, data) =>
@@ -158,25 +220,31 @@ export const AssessmentService = {
 
 export const SubmissionService = {
   getSubmissions: async (studentId) => {
-    const data = await fetchApi(
-      `/v1/submissions${studentId ? "?studentId=" + studentId : ""}`,
-    );
-    return (data || []).map((sub) => ({
-      ...sub,
-      answers: sub.answers?.map((a) => {
-        let parsed = a.answer;
-        try {
-          if (
-            parsed &&
-            typeof parsed === "string" &&
-            (parsed.startsWith("[") || parsed.startsWith("{"))
-          ) {
-            parsed = JSON.parse(parsed);
-          }
-        } catch (e) {}
-        return { ...a, answer: parsed };
-      }),
-    }));
+    try {
+      const data = await fetchApi(
+        `/v1/submissions${studentId ? "?studentId=" + studentId : ""}`,
+      );
+      const mapped = (data || []).map((sub) => ({
+        ...sub,
+        answers: sub.answers?.map((a) => {
+          let parsed = a.answer;
+          try {
+            if (
+              parsed &&
+              typeof parsed === "string" &&
+              (parsed.startsWith("[") || parsed.startsWith("{"))
+            ) {
+              parsed = JSON.parse(parsed);
+            }
+          } catch (e) {}
+          return { ...a, answer: parsed };
+        }),
+      }));
+      if (mapped.length > 0) return mapped;
+      return DEMO_SUBMISSIONS;
+    } catch {
+      return DEMO_SUBMISSIONS;
+    }
   },
   createSubmission: (data) => {
     const payload = {
@@ -226,7 +294,12 @@ export const AuthService = {
 
 export const CategoryService = {
   getCategories: async () => {
-    return await fetchApi("/categories");
+    try {
+      const data = await fetchApi("/categories");
+      return mergeCategories(data);
+    } catch {
+      return DEMO_CATEGORIES;
+    }
   },
   getCategoryById: async (id) => {
     try {

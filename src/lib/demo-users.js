@@ -1,7 +1,9 @@
 /** Demo users for login quick-access when backend is unavailable or empty. */
+import { DEMO_IDS } from "./demo-seed-data";
+
 export const DEMO_TEACHERS = [
   {
-    id: "demo-teacher-kevin",
+    id: DEMO_IDS.teacherKevin,
     name: "Kevin",
     email: "kevin@xebia.com",
     role: "teacher",
@@ -9,7 +11,7 @@ export const DEMO_TEACHERS = [
     avatar: "https://i.pravatar.cc/150?u=kevin-xebia",
   },
   {
-    id: "demo-teacher-nikhil",
+    id: DEMO_IDS.teacherNikhil,
     name: "Nikhil",
     email: "nikhil@xebia.com",
     role: "teacher",
@@ -20,30 +22,32 @@ export const DEMO_TEACHERS = [
 
 export const DEMO_STUDENTS = [
   {
-    id: "demo-student-abhinay",
+    id: DEMO_IDS.studentAbhinay,
     name: "Abhinay",
     email: "abhinay@xebia.com",
     role: "student",
     department: "Computer Science",
-    batches: ["B1"],
+    batches: [DEMO_IDS.batchFrontend],
+    averageScore: 80,
+    assessmentsCompleted: 1,
     avatar: "https://i.pravatar.cc/150?u=abhinay-xebia",
   },
   {
-    id: "demo-student-khanoj",
+    id: "00000000-0000-0000-0000-000000000002",
     name: "Khanoj",
     email: "khanoj@xebia.com",
     role: "student",
     department: "Computer Science",
-    batches: ["B1"],
+    batches: [DEMO_IDS.batchFrontend],
     avatar: "https://i.pravatar.cc/150?u=khanoj-xebia",
   },
   {
-    id: "demo-student-revanth",
+    id: "00000000-0000-0000-0000-000000000003",
     name: "Revanth",
     email: "revanth@xebia.com",
     role: "student",
     department: "Computer Science",
-    batches: ["B1"],
+    batches: [DEMO_IDS.batchFrontend],
     avatar: "https://i.pravatar.cc/150?u=revanth-xebia",
   },
 ];

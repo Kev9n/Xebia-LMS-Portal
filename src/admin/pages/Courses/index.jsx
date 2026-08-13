@@ -129,7 +129,10 @@ export default function Courses() {
         setCourses(coursesWithCounts);
         setCategories(catData || []);
       } catch (err) {
-        addToast("Failed to load courses.", "error");
+        const { DEMO_CATEGORIES: fallbackCategories, DEMO_COURSES: fallbackCourses } = await import("@/lib/demo-seed-data");
+        setCategories(fallbackCategories);
+        setCourses(fallbackCourses);
+        addToast("Using demo catalog data (backend unavailable).", "warning");
       }
     }
     fetchData();

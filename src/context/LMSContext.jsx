@@ -8,6 +8,14 @@ import {
   AllocationService,
 } from "../services/api";
 import { DEMO_STUDENTS, DEMO_TEACHERS, resolveStudents, resolveTeachers } from "../lib/demo-users";
+import {
+  attachWorkflowToStudent,
+  DEMO_ASSESSMENTS,
+  DEMO_BATCHES,
+  DEMO_NOTIFICATIONS,
+  DEMO_SUBMISSIONS,
+  getWorkflowSeed,
+} from "../lib/demo-seed-data";
 
 const LMSContext = createContext(undefined);
 
@@ -32,13 +40,13 @@ export const LMSProvider = ({ children }) => {
       } catch { return []; }
     };
     setTeachers(load("lms_teachers").length ? load("lms_teachers") : DEMO_TEACHERS);
-    setBatches(load("lms_batches"));
+    setBatches(load("lms_batches").length ? load("lms_batches") : DEMO_BATCHES);
     setStudents(load("lms_students").length ? load("lms_students") : DEMO_STUDENTS);
-    setAssessments(load("lms_assessments"));
-    setSubmissions(load("lms_submissions"));
+    setAssessments(load("lms_assessments").length ? load("lms_assessments") : DEMO_ASSESSMENTS);
+    setSubmissions(load("lms_submissions").length ? load("lms_submissions") : DEMO_SUBMISSIONS);
     setCodingSubmissions(load("codingSubmissions"));
     setCodingLeaderboard(load("codingLeaderboard"));
-    setNotifications(load("notifications"));
+    setNotifications(load("notifications").length ? load("notifications") : DEMO_NOTIFICATIONS);
   }, []);
 
   useEffect(() => {
@@ -50,27 +58,29 @@ export const LMSProvider = ({ children }) => {
         let b = await BatchService.getBatches();
         if (!Array.isArray(b)) b = [];
 
-        const enrichedUsers = users.map((u) => {
-          if (u.role === "student") {
-            const studentBatches = b
-              .filter((batch) => (batch.students || []).includes(u.id))
-              .map((batch) => batch.id);
-            return { ...u, batches: studentBatches };
-          }
-          return u;
-        });
+        const enrichedUsers = users.map((u) => attachWorkflowToStudent(
+          u.role === "student"
+            ? {
+                ...u,
+                batches: b
+                  .filter((batch) => (batch.students || []).includes(u.id))
+                  .map((batch) => batch.id),
+              }
+            : u,
+        ));
 
         const teacherList = resolveTeachers(enrichedUsers);
         const studentList = resolveStudents(enrichedUsers);
+        const batchList = b.length > 0 ? b : DEMO_BATCHES;
         setTeachers(teacherList);
         setStudents(studentList);
-        setBatches(b);
+        setBatches(batchList);
 
         // Cache to localStorage for instant login page load
         try {
           localStorage.setItem("lms_teachers", JSON.stringify(teacherList));
           localStorage.setItem("lms_students", JSON.stringify(studentList));
-          localStorage.setItem("lms_batches", JSON.stringify(b));
+          localStorage.setItem("lms_batches", JSON.stringify(batchList));
         } catch (e) { /* quota exceeded is fine */ }
 
         setCurrentUser((prev) => {
@@ -82,10 +92,13 @@ export const LMSProvider = ({ children }) => {
 
         let a = await AssessmentService.getAssessments();
         if (!Array.isArray(a)) a = [];
+        if (a.length === 0) a = DEMO_ASSESSMENTS;
         setAssessments(a);
 
         let s = await SubmissionService.getSubmissions();
         if (!Array.isArray(s)) s = [];
+        if (s.length === 0) s = DEMO_SUBMISSIONS;
+        setNotifications((current) => (current.length > 0 ? current : DEMO_NOTIFICATIONS));
         setSubmissions((current) => {
           const localInProgress = current.filter(
             (sub) => sub.status === "in_progress" && !s.some((fetched) => fetched.id === sub.id),
@@ -99,8 +112,13 @@ export const LMSProvider = ({ children }) => {
         });
       } catch (err) {
         console.error("Backend connection failed.", err);
+        const seed = getWorkflowSeed();
         setTeachers(DEMO_TEACHERS);
         setStudents(DEMO_STUDENTS);
+        setBatches(seed.batches);
+        setAssessments(seed.assessments);
+        setSubmissions(seed.submissions);
+        setNotifications(seed.notifications);
       }
     };
     fetchBackendData();
@@ -270,7 +288,7 @@ export const LMSProvider = ({ children }) => {
     } else {
       const match = students.find((s) => s.email.toLowerCase() === cleanEmail);
       if (match) {
-        setCurrentUser(match);
+        setCurrentUser(attachWorkflowToStudent(match));
         return true;
       }
     }

@@ -16,7 +16,7 @@ function ExamTakingView() {
   const navigate = useNavigate();
   const { assessments } = useLMS();
 
-  const assessment = assessments.find((a) => a.id === assessmentId);
+  const assessment = assessments.find((a) => String(a.id) === String(assessmentId));
   const questions = assessment?.questions || [];
 
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -113,7 +113,9 @@ function ExamTakingView() {
       {/* ── Top Header Panel ── */}
       <div className="bg-card border border-border rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground">React Final Exam</h1>
+          <h1 className="text-2xl font-extrabold text-foreground">
+            {assessment?.title || "Assessment"}
+          </h1>
           <p className="text-sm font-medium text-muted-foreground mt-1">ID: {assessmentId}</p>
         </div>
 

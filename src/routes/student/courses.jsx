@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { CourseService, EnrollmentService, AuthService, CategoryService } from "@/services/api";
+import { studentProfile } from "@/features/student/mocks/dummy-data";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { toast } from "sonner";
