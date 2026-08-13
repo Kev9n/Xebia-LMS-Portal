@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { commentsData } from "@/features/student/mocks/dummy-data";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CourseService, EnrollmentService, ProgressService } from "@/services/api";
+import { getLocalHierarchy } from "@/lib/admin-catalog-store";
 import { CertificateModal } from "@/features/student/components/CertificateModal";
 import { isSubmoduleComplete } from "@/lib/course-progress-store";
 import { toast } from "sonner";
@@ -280,6 +281,7 @@ function CourseViewer() {
   } = useQuery({
     queryKey: ["student-course-hierarchy", courseId],
     queryFn: () => CourseService.getCourseHierarchy(courseId),
+    placeholderData: () => getLocalHierarchy(courseId) ?? undefined,
   });
 
   const { data: enrollmentStatus, isLoading: loadingEnrollment } = useQuery({

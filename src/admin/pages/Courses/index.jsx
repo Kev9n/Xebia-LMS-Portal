@@ -110,21 +110,11 @@ export default function Courses() {
           CategoryService.getCategories(),
         ]);
 
-        // Fetch hierarchies to get actual module counts without mocking
-        const coursesWithCounts = await Promise.all(
-          (courseData || []).map(async (c) => {
-            try {
-              const hierarchy = await CourseService.getCourseHierarchy(c.id);
-              return {
-                ...c,
-                modulesCount: hierarchy?.modulesCount || 0,
-                studentsCount: c.studentsCount || 0, // Assuming backend might add this later, keep it 0 for now
-              };
-            } catch (e) {
-              return { ...c, modulesCount: 0, studentsCount: 0 };
-            }
-          }),
-        );
+        const coursesWithCounts = (courseData || []).map((c) => ({
+          ...c,
+          modulesCount: c.modulesCount ?? 0,
+          studentsCount: c.studentsCount || 0,
+        }));
 
         setCourses(coursesWithCounts);
         setCategories(catData || []);

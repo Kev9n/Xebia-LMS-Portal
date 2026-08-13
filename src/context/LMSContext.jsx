@@ -52,22 +52,28 @@ export const LMSProvider = ({ children }) => {
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
-        let users = await UserService.getUsers();
-        if (!Array.isArray(users)) users = [];
+        const [usersRaw, bRaw, aRaw, sRaw] = await Promise.all([
+          UserService.getUsers(),
+          BatchService.getBatches(),
+          AssessmentService.getAssessments(),
+          SubmissionService.getSubmissions(),
+        ]);
 
-        let b = await BatchService.getBatches();
-        if (!Array.isArray(b)) b = [];
+        let users = Array.isArray(usersRaw) ? usersRaw : [];
+        let b = Array.isArray(bRaw) ? bRaw : [];
 
-        const enrichedUsers = users.map((u) => attachWorkflowToStudent(
-          u.role === "student"
-            ? {
-                ...u,
-                batches: b
-                  .filter((batch) => (batch.students || []).includes(u.id))
-                  .map((batch) => batch.id),
-              }
-            : u,
-        ));
+        const enrichedUsers = users.map((u) =>
+          attachWorkflowToStudent(
+            u.role === "student"
+              ? {
+                  ...u,
+                  batches: b
+                    .filter((batch) => (batch.students || []).includes(u.id))
+                    .map((batch) => batch.id),
+                }
+              : u,
+          ),
+        );
 
         const teacherList = resolveTeachers(enrichedUsers);
         const studentList = resolveStudents(enrichedUsers);
@@ -76,27 +82,25 @@ export const LMSProvider = ({ children }) => {
         setStudents(studentList);
         setBatches(batchList);
 
-        // Cache to localStorage for instant login page load
         try {
           localStorage.setItem("lms_teachers", JSON.stringify(teacherList));
           localStorage.setItem("lms_students", JSON.stringify(studentList));
           localStorage.setItem("lms_batches", JSON.stringify(batchList));
-        } catch (e) { /* quota exceeded is fine */ }
+        } catch (e) {
+          /* quota exceeded is fine */
+        }
 
         setCurrentUser((prev) => {
           if (!prev) return prev;
           const updated = enrichedUsers.find((u) => u.id === prev.id);
-          // If the cached user is not in the DB (e.g., after a DB wipe), clear the session
           return updated || null;
         });
 
-        let a = await AssessmentService.getAssessments();
-        if (!Array.isArray(a)) a = [];
+        let a = Array.isArray(aRaw) ? aRaw : [];
         if (a.length === 0) a = DEMO_ASSESSMENTS;
         setAssessments(a);
 
-        let s = await SubmissionService.getSubmissions();
-        if (!Array.isArray(s)) s = [];
+        let s = Array.isArray(sRaw) ? sRaw : [];
         if (s.length === 0) s = DEMO_SUBMISSIONS;
         setNotifications((current) => (current.length > 0 ? current : DEMO_NOTIFICATIONS));
         setSubmissions((current) => {
@@ -107,7 +111,9 @@ export const LMSProvider = ({ children }) => {
           try {
             localStorage.setItem("lms_assessments", JSON.stringify(a));
             localStorage.setItem("lms_submissions", JSON.stringify(merged));
-          } catch (e) { /* quota exceeded is fine */ }
+          } catch (e) {
+            /* quota exceeded is fine */
+          }
           return merged;
         });
       } catch (err) {

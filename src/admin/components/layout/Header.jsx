@@ -14,7 +14,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { CourseService, CategoryService } from "@/services/api";
+import { getMergedCategories, getMergedCourses } from "@/lib/admin-catalog-store";
 import { useRouter, Link } from "@tanstack/react-router";
 import { clsx } from "clsx";
 
@@ -75,27 +75,29 @@ export function Header({ setIsMobileOpen }) {
   ];
 
   useEffect(() => {
-    if (searchQuery.trim().length >= 1) {
-      Promise.all([CourseService.getCourses(), CategoryService.getCategories()]).then(
-        ([courses, categories]) => {
-          const lower = searchQuery.toLowerCase();
-          setSearchResults({
-            courses: (courses || [])
-              .filter((c) => (c.title || "").toLowerCase().includes(lower))
-              .slice(0, 3),
-            categories: (categories || [])
-              .filter((c) => (c.name || "").toLowerCase().includes(lower))
-              .slice(0, 3),
-            analytics: ANALYTICS_PAGES.filter((a) => a.title.toLowerCase().includes(lower)).slice(
-              0,
-              3,
-            ),
-          });
-        },
-      );
-    } else {
-      setSearchResults({ courses: [], categories: [], analytics: [] });
-    }
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length >= 1) {
+        const lower = searchQuery.toLowerCase();
+        const courses = getMergedCourses(null);
+        const categories = getMergedCategories(null);
+        setSearchResults({
+          courses: (courses || [])
+            .filter((c) => (c.title || "").toLowerCase().includes(lower))
+            .slice(0, 3),
+          categories: (categories || [])
+            .filter((c) => (c.name || "").toLowerCase().includes(lower))
+            .slice(0, 3),
+          analytics: ANALYTICS_PAGES.filter((a) => a.title.toLowerCase().includes(lower)).slice(
+            0,
+            3,
+          ),
+        });
+      } else {
+        setSearchResults({ courses: [], categories: [], analytics: [] });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {

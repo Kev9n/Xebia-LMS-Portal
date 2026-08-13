@@ -46,14 +46,44 @@ import {
   getDemoEnrolledCourses,
   getReactCourseHierarchy,
 } from "@/lib/demo-seed-data";
-import { enrollBatchStudentsInCourses, getLocalEnrollmentsForStudent } from "@/lib/admin-catalog-store";
+import {
+  enrollBatchStudentsInCourses,
+  getLocalEnrollmentsForStudent,
+  isAdminOfflineMode,
+} from "@/lib/admin-catalog-store";
+import {
+  clearApiCircuit,
+  fetchWithTimeout,
+  isApiCircuitOpen,
+  tripApiCircuit,
+} from "@/lib/api-fetch";
+import { getLastHealthCheck } from "@/lib/backend-health";
 
 const API_BASE_URL = resolveApiBaseUrl();
 
+function shouldSkipRemoteApi() {
+  if (isApiCircuitOpen()) return true;
+
+  const last = getLastHealthCheck();
+  if (last.checkedAt > 0 && !last.ok && Date.now() - last.checkedAt < 45_000) {
+    return true;
+  }
+
+  if (typeof window !== "undefined" && isAdminOfflineMode()) {
+    if (!(last.ok && Date.now() - last.checkedAt < 60_000)) return true;
+  }
+
+  return false;
+}
+
 /**
- * Standard fetch wrapper that automatically handles JSON and error states
+ * Standard fetch wrapper with timeout, circuit breaker, and JSON handling.
  */
 async function fetchApi(endpoint, options = {}) {
+  if (shouldSkipRemoteApi()) {
+    throw new Error("API unavailable (using local cache)");
+  }
+
   const userId = options.userId || getSessionUserId(TEMPORARY_STUDENT_ID);
   const headers = {
     "Content-Type": "application/json",
@@ -62,14 +92,24 @@ async function fetchApi(endpoint, options = {}) {
     ...options.headers,
   };
 
-  const { userId: _omit, ...fetchOptions } = options;
+  const { userId: _omit, timeoutMs, ...fetchOptions } = options;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...fetchOptions,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetchWithTimeout(
+      `${API_BASE_URL}${endpoint}`,
+      { ...fetchOptions, headers },
+      timeoutMs,
+    );
+  } catch (err) {
+    tripApiCircuit();
+    throw err;
+  }
 
   if (!response.ok) {
+    if (response.status >= 500 || response.status === 429) {
+      tripApiCircuit(20_000);
+    }
     let errorMsg = "An error occurred while fetching data";
     try {
       const errorData = await response.json();
@@ -80,7 +120,7 @@ async function fetchApi(endpoint, options = {}) {
     throw new Error(errorMsg);
   }
 
-  // Handle empty responses (like 204 No Content)
+  clearApiCircuit();
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 }
@@ -194,6 +234,7 @@ export const ProgressService = {
 
 export const CourseService = {
   getCourses: async () => {
+    if (shouldSkipRemoteApi()) return getMergedCourses(null);
     try {
       const data = await fetchApi("/courses", { cache: "no-store" });
       setAdminOfflineMode(false);
@@ -212,6 +253,7 @@ export const CourseService = {
     }
   },
   getCourseHierarchy: async (id) => {
+    if (shouldSkipRemoteApi()) return getLocalHierarchy(id);
     try {
       const dto = await fetchApi(`/courses/${id}/hierarchy`, { cache: "no-store" });
       if (!dto) throw new Error("Empty hierarchy");
@@ -383,6 +425,7 @@ export const CourseService = {
 
 export const UserService = {
   getUsers: async (role) => {
+    if (shouldSkipRemoteApi()) return getDemoUsers(role);
     try {
       const data = await fetchApi(`/v1/users${role ? "?role=" + role : ""}`);
       if (Array.isArray(data) && data.length > 0) {
@@ -411,6 +454,7 @@ export const TrainerCascadeService = {
 
 export const BatchService = {
   getBatches: async () => {
+    if (shouldSkipRemoteApi()) return DEMO_BATCHES;
     try {
       const data = await fetchApi("/v1/batches");
       if (Array.isArray(data) && data.length > 0) {
@@ -450,6 +494,7 @@ export const BatchService = {
 
 export const AssessmentService = {
   getAssessments: async () => {
+    if (shouldSkipRemoteApi()) return DEMO_ASSESSMENTS;
     try {
       const data = await fetchApi("/v1/assessments");
       if (Array.isArray(data) && data.length > 0) return data;
@@ -468,6 +513,7 @@ export const AssessmentService = {
 
 export const SubmissionService = {
   getSubmissions: async (studentId) => {
+    if (shouldSkipRemoteApi()) return DEMO_SUBMISSIONS;
     try {
       const data = await fetchApi(
         `/v1/submissions${studentId ? "?studentId=" + studentId : ""}`,
@@ -542,6 +588,7 @@ export const AuthService = {
 
 export const CategoryService = {
   getCategories: async () => {
+    if (shouldSkipRemoteApi()) return getMergedCategories(null);
     try {
       const data = await fetchApi("/categories");
       setAdminOfflineMode(false);

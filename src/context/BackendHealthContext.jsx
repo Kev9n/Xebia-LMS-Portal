@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { checkBackendHealth } from "@/lib/backend-health";
 import { resolveApiBaseUrl } from "@/lib/api-config";
 
@@ -14,20 +14,26 @@ export function BackendHealthProvider({ children }) {
   const [message, setMessage] = useState("");
   const apiBaseUrl = resolveApiBaseUrl();
 
-  const recheck = async () => {
-    const result = await checkBackendHealth(true);
+  const recheck = useCallback(async (force = false) => {
+    const result = await checkBackendHealth(force);
     setOnline(result.ok);
     setMessage(result.message || "");
-  };
-
-  useEffect(() => {
-    recheck();
-    const interval = setInterval(recheck, 60000);
-    return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Defer first probe so cached UI paints before hitting Render
+    const initialTimer = setTimeout(() => recheck(true), 2500);
+    const interval = setInterval(() => recheck(false), 120_000);
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [recheck]);
+
   return (
-    <BackendHealthContext.Provider value={{ online, message, apiBaseUrl, recheck }}>
+    <BackendHealthContext.Provider
+      value={{ online, message, apiBaseUrl, recheck: () => recheck(true) }}
+    >
       {children}
     </BackendHealthContext.Provider>
   );
