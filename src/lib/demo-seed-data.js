@@ -1,3 +1,5 @@
+import { getCourseProgressPercent } from "@/lib/course-progress-store";
+
 /** Shared tenant + entity IDs for demo workflow (aligned with backend Flyway V15). */
 export const DEMO_TENANT_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -236,10 +238,11 @@ export const DEMO_ENROLLMENTS = [
 export function getDemoEnrolledCourses() {
   return DEMO_ENROLLMENTS.map((enrollment) => {
     const course = DEMO_COURSES.find((c) => c.id === enrollment.courseId);
+    const localProgress = getCourseProgressPercent(enrollment.courseId);
     return {
       ...(course || {}),
       id: enrollment.courseId,
-      progress: enrollment.progress ?? 35,
+      progress: Math.max(enrollment.progress ?? 0, localProgress),
       isEnrolled: true,
     };
   });

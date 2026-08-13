@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import {
   Clock,
@@ -8,7 +8,6 @@ import {
   BookOpen,
   Search,
   Award,
-  Printer,
   X,
   Users,
   Star,
@@ -29,8 +28,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { CourseService, EnrollmentService, AuthService, CategoryService } from "@/services/api";
-import { studentProfile } from "@/features/student/mocks/dummy-data";
+import { CourseService, EnrollmentService } from "@/services/api";
+import { CertificateModal } from "@/features/student/components/CertificateModal";
+import { getCourseProgressPercent } from "@/lib/course-progress-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { toast } from "sonner";
@@ -43,298 +43,6 @@ export const Route = createFileRoute("/student/courses")({
 const BRAND = "#6C1D5F";
 const TEAL = "#01AC9F";
 
-function CertificateModal({ course, onClose }) {
-  const certificateRef = useRef(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const completionDate = new Date().toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const certId = `XEB-${course.id.toUpperCase()}-2026-${studentProfile.id}`;
-
-  const handleDownloadPDF = () => {
-    window.print();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm print:bg-transparent print:p-0">
-      <style>{`
-        @media print {
-          @page { size: A4 landscape; margin: 0; }
-          body {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          
-          /* Hide everything by default */
-          body * {
-            visibility: hidden !important;
-          }
-          
-          /* Show only the certificate and its children */
-          #certificate-print-area, #certificate-print-area * {
-            visibility: visible !important;
-          }
-          
-          /* Position the certificate to fill the entire printed page */
-          #certificate-print-area {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            background: white !important;
-            transform: none !important;
-            max-width: none !important;
-            z-index: 9999 !important;
-          }
-        }
-      `}</style>
-      <motion.div
-        id="print-modal-wrapper"
-        initial={{ opacity: 0, scale: 0.92, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 24 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative w-full max-w-4xl bg-card rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "92vh" }}
-      >
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0">
-          <div>
-            <h3 className="font-extrabold text-foreground">Certificate of Completion</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Issued by Xebia · {completionDate}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#5a184f] disabled:opacity-60 text-white text-sm font-bold rounded-xl transition-all shadow-sm"
-            >
-              <Printer className="w-4 h-4" />
-              {isDownloading ? "Preparing..." : "Print Certificate"}
-            </button>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto bg-gray-200 dark:bg-gray-900 flex items-center justify-center p-6 sm:p-10 print:bg-white print:p-0">
-          <div
-            id="certificate-print-area"
-            ref={certificateRef}
-            className="w-full max-h-full bg-white relative overflow-hidden shadow-2xl print:shadow-none"
-            style={{
-              maxWidth: "794px",
-              aspectRatio: "1.414 / 1",
-              fontFamily: "'Georgia','Times New Roman',serif",
-              containerType: "inline-size",
-            }}
-          >
-            {/* Gold accent bars */}
-            <div
-              className="absolute top-0 left-0 right-0 h-[7px]"
-              style={{
-                background: "linear-gradient(90deg,#6C1D5F,#B48C3C,#01AC9F,#B48C3C,#6C1D5F)",
-              }}
-            />
-            <div
-              className="absolute bottom-0 left-0 right-0 h-[7px]"
-              style={{
-                background: "linear-gradient(90deg,#6C1D5F,#B48C3C,#01AC9F,#B48C3C,#6C1D5F)",
-              }}
-            />
-
-            {/* Borders */}
-            <div
-              className="absolute inset-[10px]"
-              style={{ border: `1.5px solid ${BRAND}`, borderRadius: "2px" }}
-            />
-            <div
-              className="absolute inset-[15px]"
-              style={{ border: `0.5px solid ${TEAL}40`, borderRadius: "2px" }}
-            />
-
-            {/* Corner ornaments */}
-            {[
-              { cls: "top-[18px] left-[18px]", rot: "0" },
-              { cls: "top-[18px] right-[18px]", rot: "90" },
-              { cls: "bottom-[18px] right-[18px]", rot: "180" },
-              { cls: "bottom-[18px] left-[18px]", rot: "270" },
-            ].map(({ cls, rot }, i) => (
-              <div
-                key={i}
-                className={`absolute ${cls}`}
-                style={{ transform: `rotate(${rot}deg)`, width: 28, height: 28 }}
-              >
-                <svg viewBox="0 0 28 28" fill="none">
-                  <path d="M1 1 L10 1 L10 3 L3 3 L3 10 L1 10 Z" fill={BRAND} />
-                  <path d="M1 1 L7 1 L7 2 L2 2 L2 7 L1 7 Z" fill="#B48C3C" opacity="0.7" />
-                </svg>
-              </div>
-            ))}
-
-            {/* Dot watermark */}
-            <div
-              className="absolute inset-0 opacity-[0.025]"
-              style={{
-                backgroundImage: `radial-gradient(${BRAND} 1px,transparent 1px)`,
-                backgroundSize: "20px 20px",
-              }}
-            />
-
-            <div className="absolute inset-0 z-10 flex flex-col justify-between px-16 pt-10 pb-8 text-center">
-              {/* ── TOP: Logo + Tagline ── */}
-              <div className="flex flex-col items-center gap-2">
-                <img
-                  src="/logo-purple.png"
-                  alt="Xebia"
-                  className="h-[36px] object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-                <div
-                  className="w-[180px] h-px"
-                  style={{
-                    background: "linear-gradient(to right,transparent,#B48C3C,transparent)",
-                  }}
-                />
-                <p
-                  className="font-extrabold uppercase"
-                  style={{ color: TEAL, fontSize: "1.15cqw", letterSpacing: "0.28em" }}
-                >
-                  Enterprise Learning Management System
-                </p>
-                <p
-                  className="font-extrabold uppercase mt-1 text-[#1f2937]"
-                  style={{ fontSize: "2.1cqw", letterSpacing: "0.35em" }}
-                >
-                  Certificate of Completion
-                </p>
-              </div>
-
-              {/* ── MIDDLE: Name + Course ── */}
-              <div className="flex flex-col items-center gap-3 my-auto py-6">
-                <p className="italic text-gray-500 font-serif" style={{ fontSize: "1.6cqw" }}>
-                  This is to proudly certify that
-                </p>
-                <div>
-                  <h2
-                    className="font-bold italic leading-none text-primary font-serif"
-                    style={{ fontSize: "6.5cqw" }}
-                  >
-                    {studentProfile.name}
-                  </h2>
-                  <div
-                    className="mx-auto mt-2"
-                    style={{
-                      height: "2px",
-                      width: "55%",
-                      background:
-                        "linear-gradient(to right,transparent,#B48C3C 25%,#B48C3C 75%,transparent)",
-                    }}
-                  />
-                </div>
-                <p className="italic text-gray-500 font-serif" style={{ fontSize: "1.6cqw" }}>
-                  has successfully completed
-                </p>
-                <h3
-                  className="font-bold text-gray-800 leading-snug font-sans"
-                  style={{ fontSize: "2.8cqw", maxWidth: "85%" }}
-                >
-                  {course.title}
-                </h3>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span
-                    className="font-bold uppercase tracking-widest rounded-sm"
-                    style={{
-                      background: `${TEAL}12`,
-                      color: TEAL,
-                      border: `1px solid ${TEAL}35`,
-                      fontSize: "1.2cqw",
-                      padding: "0.4em 1.2em",
-                    }}
-                  >
-                    {course.duration}
-                  </span>
-                  <span
-                    className="font-bold uppercase tracking-widest rounded-sm"
-                    style={{
-                      background: `${BRAND}08`,
-                      color: BRAND,
-                      border: `1px solid ${BRAND}25`,
-                      fontSize: "1.2cqw",
-                      padding: "0.4em 1.2em",
-                    }}
-                  >
-                    Xebia Certified
-                  </span>
-                </div>
-              </div>
-
-              {/* ── BOTTOM: Date + ID + Signature ── */}
-              <div
-                className="w-full flex items-end justify-between pt-3"
-                style={{ borderTop: "1px solid #e2e8f0" }}
-              >
-                <div className="text-left">
-                  <p className="font-bold text-gray-700" style={{ fontSize: "1.4cqw" }}>
-                    {completionDate}
-                  </p>
-                  <p
-                    className="uppercase text-gray-400 mt-0.5"
-                    style={{ fontSize: "0.95cqw", letterSpacing: "0.22em" }}
-                  >
-                    Date of Issue
-                  </p>
-                </div>
-                <p
-                  className="text-gray-300 uppercase"
-                  style={{ fontSize: "0.95cqw", letterSpacing: "0.15em" }}
-                >
-                  ID: {certId}
-                </p>
-                <div className="text-right">
-                  <div
-                    className="h-px ml-auto mb-1.5"
-                    style={{ width: "12cqw", background: "#aaa" }}
-                  />
-                  <p
-                    className="font-bold italic text-gray-700 font-serif"
-                    style={{ fontSize: "1.5cqw" }}
-                  >
-                    Anand Sahay
-                  </p>
-                  <p
-                    className="uppercase text-gray-400 mt-0.5"
-                    style={{ fontSize: "0.95cqw", letterSpacing: "0.2em" }}
-                  >
-                    Global CEO, Xebia
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 function MyCourses() {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -343,15 +51,25 @@ function MyCourses() {
   const [viewMode, setViewMode] = useState("grid");
   const [filterLevel, setFilterLevel] = useState("All Levels");
   const [filterStatus, setFilterStatus] = useState("All Status");
-  const [certCourse, setCertCourse] = useState(null); // course to show certificate for
-  const { data: allCoursesData, isLoading: loadingAll } = useQuery({
+  const [certCourse, setCertCourse] = useState(null);
+  const [courseTab, setCourseTab] = useState("enrolled");
+  const { data: allCoursesData, isLoading: loadingAll, refetch: refetchCourses } = useQuery({
     queryKey: ["student-all-courses"],
     queryFn: CourseService.getCourses,
   });
-  const { data: enrolledCoursesData, isLoading: loadingEnrolled } = useQuery({
+  const { data: enrolledCoursesData, isLoading: loadingEnrolled, refetch: refetchEnrolled } = useQuery({
     queryKey: ["student-enrolled-courses"],
     queryFn: EnrollmentService.getMyCourses,
   });
+
+  useEffect(() => {
+    const refresh = () => {
+      refetchCourses();
+      refetchEnrolled();
+    };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [refetchCourses, refetchEnrolled]);
 
   const loading = loadingAll || loadingEnrolled;
   const allCourses = allCoursesData || [];
@@ -359,9 +77,11 @@ function MyCourses() {
 
   const courses = allCourses.map((course) => {
     const enrolled = enrolledCourses.find((e) => String(e.id) === String(course.id));
+    const localProgress = getCourseProgressPercent(course.id);
+    const progress = Math.max(enrolled?.progress || 0, localProgress);
     return {
       ...course,
-      progress: enrolled ? enrolled.progress || course.progress || 0 : 0,
+      progress,
       isEnrolled: !!enrolled,
     };
   });
@@ -391,8 +111,14 @@ function MyCourses() {
     return true;
   });
 
-  const inProgress = courses.filter((c) => c.progress > 0 && c.progress < 100);
-  const completed = courses.filter((c) => c.progress === 100);
+  const inProgress = courses.filter((c) => c.isEnrolled && c.progress > 0 && c.progress < 100);
+  const completed = courses.filter((c) => c.isEnrolled && c.progress === 100);
+
+  const tabbedCourses = (() => {
+    if (courseTab === "completed") return filteredCourses.filter((c) => c.isEnrolled && c.progress === 100);
+    if (courseTab === "enrolled") return filteredCourses.filter((c) => c.isEnrolled && c.progress < 100);
+    return filteredCourses;
+  })();
 
   const statusBadge = (course) => {
     if (course.progress === 100)
@@ -749,7 +475,7 @@ function MyCourses() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {[
-          { label: "Enrolled Courses", value: courses.length, sub: "Total enrollments", icon: BookOpen, bg: "bg-[#6C1D5F]/10", color: "text-[#6C1D5F]" },
+          { label: "Enrolled Courses", value: courses.filter((c) => c.isEnrolled).length, sub: "Total enrollments", icon: BookOpen, bg: "bg-[#6C1D5F]/10", color: "text-[#6C1D5F]" },
           { label: "In Progress", value: inProgress.length, sub: "Ongoing courses", icon: PlayCircle, bg: "bg-[#FF6200]/10", color: "text-[#FF6200]" },
           { label: "Completed", value: completed.length, sub: "Finished courses", icon: Award, bg: "bg-[#01AC9F]/10", color: "text-[#01AC9F]" },
         ].map((kpi, i) => (
@@ -876,7 +602,33 @@ function MyCourses() {
         </div>
       </div>
 
-      <CourseGrid items={filteredCourses} />
+      <Tabs value={courseTab} onValueChange={setCourseTab} className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-3 bg-gray-100 dark:bg-[#1a1a24] p-1 rounded-xl">
+          <TabsTrigger value="enrolled" className="rounded-lg text-xs sm:text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-[#252535]">
+            Enrolled
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="rounded-lg text-xs sm:text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-[#252535]">
+            Completed
+          </TabsTrigger>
+          <TabsTrigger value="all" className="rounded-lg text-xs sm:text-sm font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-[#252535]">
+            All
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={courseTab} className="mt-0">
+          {courseTab === "enrolled" && tabbedCourses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-card rounded-2xl border border-border shadow-sm">
+              <BookOpen className="w-12 h-12 mb-4 text-gray-200 dark:text-gray-700" />
+              <p className="text-lg font-bold text-foreground mb-1">No active courses</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Complete a course or check the Completed tab for finished courses.
+              </p>
+            </div>
+          ) : (
+            <CourseGrid items={tabbedCourses} />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Certificate Modal */}
       <AnimatePresence>

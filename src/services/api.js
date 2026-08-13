@@ -1,5 +1,13 @@
 import { TEMPORARY_STUDENT_ID } from "@/config/student-identity";
 import {
+  getProgressSummary,
+  markSubmoduleComplete,
+  mergeProgressSummaries,
+  updateLastAccess,
+  ensureCourseProgress,
+  getCourseProgressPercent,
+} from "@/lib/course-progress-store";
+import {
   DEMO_CATEGORIES,
   DEMO_COURSES,
   DEMO_TENANT_ID,
@@ -49,16 +57,31 @@ async function fetchApi(endpoint, options = {}) {
 export const EnrollmentService = {
   enroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "POST" }),
   unenroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "DELETE" }),
-  getStatus: (courseId) => fetchApi(`/enrollments/${courseId}/status`),
+  getStatus: async (courseId) => {
+    try {
+      const status = await fetchApi(`/enrollments/${courseId}/status`);
+      if (status?.isEnrolled) return status;
+    } catch {
+      /* fall through */
+    }
+    const demo = getDemoEnrolledCourses().find((c) => String(c.id) === String(courseId));
+    return {
+      isEnrolled: !!demo,
+      progress: demo?.progress ?? getProgressSummary(courseId).progressPercentage,
+    };
+  },
   getMyCourses: async () => {
     try {
       const data = await fetchApi("/enrollments/my-courses");
       if (Array.isArray(data) && data.length > 0) {
-        return data.map((item) => ({
-          ...item,
-          id: item.id || item.courseId,
-          progress: item.progress ?? 0,
-        }));
+        return data.map((item) => {
+          const courseId = item.id || item.courseId;
+          return {
+            ...item,
+            id: courseId,
+            progress: Math.max(item.progress ?? 0, getCourseProgressPercent(courseId)),
+          };
+        });
       }
     } catch {
       /* fall through to demo enrollments */
@@ -68,18 +91,50 @@ export const EnrollmentService = {
 };
 
 export const ProgressService = {
-  markComplete: (courseId, submoduleId) =>
-    fetchApi(`/progress/course/${courseId}/submodule/${submoduleId}/complete`, { method: "POST" }),
-  markIncomplete: (courseId, submoduleId) =>
-    fetchApi(`/progress/course/${courseId}/submodule/${submoduleId}/complete`, {
-      method: "DELETE",
-    }),
-  updateAccess: (courseId, submoduleId, contentId) =>
-    fetchApi(`/progress/course/${courseId}/access`, {
-      method: "POST",
-      body: JSON.stringify({ submoduleId, contentId }),
-    }),
-  getCourseProgress: (courseId) => fetchApi(`/progress/course/${courseId}`),
+  markComplete: async (courseId, submoduleId, options = {}) => {
+    const local = markSubmoduleComplete(courseId, submoduleId, options);
+    try {
+      await fetchApi(`/progress/course/${courseId}/submodule/${submoduleId}/complete`, {
+        method: "POST",
+      });
+    } catch {
+      /* local progress is source of truth when API unavailable */
+    }
+    return local;
+  },
+  markIncomplete: async (courseId, submoduleId) => {
+    try {
+      return await fetchApi(`/progress/course/${courseId}/submodule/${submoduleId}/complete`, {
+        method: "DELETE",
+      });
+    } catch {
+      return null;
+    }
+  },
+  updateAccess: async (courseId, submoduleId, contentId, options = {}) => {
+    updateLastAccess(courseId, submoduleId, options);
+    try {
+      return await fetchApi(`/progress/course/${courseId}/access`, {
+        method: "POST",
+        body: JSON.stringify({ submoduleId, contentId }),
+      });
+    } catch {
+      return null;
+    }
+  },
+  getCourseProgress: async (courseId, options = {}) => {
+    const studentId = options.studentId || TEMPORARY_STUDENT_ID;
+    if (options.totalLessons) {
+      ensureCourseProgress(courseId, studentId, options.totalLessons);
+    }
+    const local = getProgressSummary(courseId, studentId);
+    try {
+      const remote = await fetchApi(`/progress/course/${courseId}`);
+      return mergeProgressSummaries(remote, local);
+    } catch {
+      return local;
+    }
+  },
 };
 
 export const CourseService = {

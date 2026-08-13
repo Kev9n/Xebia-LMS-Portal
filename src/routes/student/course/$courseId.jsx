@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { commentsData, studentProfile } from "@/features/student/mocks/dummy-data";
-import { useQuery } from "@tanstack/react-query";
-import { CourseService, EnrollmentService, ProgressService, AuthService } from "@/services/api";
+import { commentsData } from "@/features/student/mocks/dummy-data";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CourseService, EnrollmentService, ProgressService } from "@/services/api";
+import { CertificateModal } from "@/features/student/components/CertificateModal";
+import { isSubmoduleComplete } from "@/lib/course-progress-store";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,6 +23,8 @@ import {
   Download,
   Layers,
   Activity,
+  Award,
+  Menu,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect, useMemo } from "react";
@@ -265,6 +270,9 @@ function ContentRenderer({ block }) {
 
 function CourseViewer() {
   const { courseId } = Route.useParams();
+  const queryClient = useQueryClient();
+  const [showCert, setShowCert] = useState(false);
+  const [showCurriculum, setShowCurriculum] = useState(false);
   const {
     data: courseHierarchy,
     isLoading: loading,
@@ -288,18 +296,25 @@ function CourseViewer() {
     enrollmentStatus?.isEnrolled ||
     (enrolledCoursesData || []).some((c) => String(c.id) === String(courseId));
 
+  const course = courseHierarchy || {};
+  const modules = useMemo(() => courseHierarchy?.modules || [], [courseHierarchy]);
+  const flatSubmodules = useMemo(
+    () => modules.reduce((acc, mod) => acc.concat(mod.submodules || []), []),
+    [modules],
+  );
+
   const {
     data: progressData,
     isLoading: loadingProgress,
     refetch: refetchProgress,
   } = useQuery({
-    queryKey: ["student-progress", courseId],
-    queryFn: () => ProgressService.getCourseProgress(courseId),
-    enabled: isEnrolled,
+    queryKey: ["student-progress", courseId, flatSubmodules.length],
+    queryFn: () =>
+      ProgressService.getCourseProgress(courseId, {
+        totalLessons: flatSubmodules.length || undefined,
+      }),
+    enabled: isEnrolled && flatSubmodules.length > 0,
   });
-
-  const course = courseHierarchy || {};
-  const modules = useMemo(() => courseHierarchy?.modules || [], [courseHierarchy]);
 
   const handleEnroll = async () => {
     try {
@@ -309,11 +324,6 @@ function CourseViewer() {
       console.error(e);
     }
   };
-
-  // Flatten submodules for navigation
-  const flatSubmodules = useMemo(() => {
-    return modules.reduce((acc, mod) => acc.concat(mod.submodules || []), []);
-  }, [modules]);
 
   const [activeSubmoduleId, setActiveSubmoduleId] = useState(null);
 
@@ -361,6 +371,7 @@ function CourseViewer() {
           courseId,
           activeSubmoduleId,
           activeSubmodule.contentBlocks[0].id,
+          { totalLessons: flatSubmodules.length },
         );
       }
     }
@@ -390,19 +401,34 @@ function CourseViewer() {
   const handleMarkComplete = async () => {
     if (!activeSubmoduleId) return;
     try {
-      await ProgressService.markComplete(courseId, activeSubmoduleId);
-      await refetchProgress();
+      const summary = await ProgressService.markComplete(courseId, activeSubmoduleId, {
+        totalLessons: flatSubmodules.length,
+      });
+      queryClient.setQueryData(["student-progress", courseId, flatSubmodules.length], summary);
+      queryClient.invalidateQueries({ queryKey: ["student-enrolled-courses"] });
+      if (summary.progressPercentage >= 100) {
+        toast.success("Course completed! Download your certificate below.");
+      } else {
+        toast.success("Lesson marked complete!");
+      }
       handleNext();
     } catch (e) {
       console.error(e);
+      toast.error("Could not save progress. Please try again.");
     }
   };
+
+  const lessonIsComplete = (submoduleId) =>
+    (progressData?.completedSubmoduleIds || []).some(
+      (id) => String(id) === String(submoduleId),
+    ) || isSubmoduleComplete(courseId, submoduleId);
 
   // Local Progress Indicator
   const totalLessons = progressData?.totalLessons || flatSubmodules.length;
   const completedLessons = progressData?.completedLessons || 0;
   const progressPercent = progressData?.progressPercentage || 0;
   const completedSubmoduleIds = progressData?.completedSubmoduleIds || [];
+  const isCourseComplete = progressPercent >= 100;
 
   if (loading || loadingEnrollment) {
     return (
@@ -544,43 +570,75 @@ function CourseViewer() {
   return (
     <div className="max-w-[1600px] mx-auto pb-12 h-full flex flex-col animate-in fade-in duration-500">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4 min-w-0">
           <Link
             to="/student/courses"
-            className="w-10 h-10 rounded-full bg-white dark:bg-[#15151f] border border-[#DEDEDE] dark:border-white/10 flex items-center justify-center text-[#5A5A5A] dark:text-[#DADCEA] hover:bg-[#F7F8FC] dark:hover:bg-[#4A1E47] transition-all shadow-sm"
+            className="w-10 h-10 rounded-full bg-white dark:bg-[#15151f] border border-[#DEDEDE] dark:border-white/10 flex items-center justify-center text-[#5A5A5A] dark:text-[#DADCEA] hover:bg-[#F7F8FC] dark:hover:bg-[#4A1E47] transition-all shadow-sm shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-bold text-[#6C1D5F] dark:text-[#84117C] mb-1 uppercase tracking-wider">
               <BookOpen className="w-3.5 h-3.5" /> Course
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[#000000] dark:text-[#FFFFFF] leading-tight line-clamp-1">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#000000] dark:text-[#FFFFFF] leading-tight truncate">
               {course.title}
             </h1>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-4 bg-white dark:bg-white/5 px-5 py-2.5 rounded-2xl border border-[#DEDEDE] dark:border-white/10 shadow-sm">
-          <div className="text-right">
-            <p className="text-[10px] font-bold text-[#5A5A5A] dark:text-[#DADCEA] uppercase tracking-wider mb-0.5">
-              Your Progress
-            </p>
-            <p className="text-sm font-extrabold text-[#000000] dark:text-[#FFFFFF] leading-none">
-              {progressPercent}%
-            </p>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center gap-4 bg-white dark:bg-white/5 px-5 py-2.5 rounded-2xl border border-[#DEDEDE] dark:border-white/10 shadow-sm">
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-[#5A5A5A] dark:text-[#DADCEA] uppercase tracking-wider mb-0.5">
+                Your Progress
+              </p>
+              <p className="text-sm font-extrabold text-[#000000] dark:text-[#FFFFFF] leading-none">
+                {progressPercent}%
+              </p>
+            </div>
+            <div className="w-24 sm:w-32">
+              <Progress
+                value={progressPercent}
+                className="h-2 [&>div]:bg-[#6C1D5F] dark:[&>div]:bg-[#84117C] bg-[#F7F8FC] dark:bg-[#15151f]"
+              />
+            </div>
           </div>
-          <div className="w-32">
-            <Progress
-              value={progressPercent}
-              className="h-2 [&>div]:bg-[#6C1D5F] dark:[&>div]:bg-[#84117C] bg-[#F7F8FC] dark:bg-[#15151f]"
-            />
-          </div>
+          {isCourseComplete && (
+            <button
+              onClick={() => setShowCert(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#01AC9F] hover:bg-[#019085] text-white text-sm font-bold rounded-xl shadow-sm transition-all"
+            >
+              <Award className="w-4 h-4" /> Download Certificate
+            </button>
+          )}
         </div>
       </div>
 
+      {isCourseComplete && (
+        <div className="rounded-2xl border border-[#01AC9F]/30 bg-[#01AC9F]/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-sm font-bold text-[#01AC9F]">
+            Congratulations! You completed this course.
+          </p>
+          <button
+            onClick={() => setShowCert(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#01AC9F] text-white text-sm font-bold rounded-xl"
+          >
+            <Award className="w-4 h-4" /> View Certificate
+          </button>
+        </div>
+      )}
+
       {/* ── Main Workspace ── */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Mobile curriculum toggle */}
+        <button
+          type="button"
+          onClick={() => setShowCurriculum(true)}
+          className="lg:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#DEDEDE] dark:border-white/10 bg-white dark:bg-[#15151f] text-sm font-bold"
+        >
+          <Menu className="w-4 h-4" /> Course Curriculum
+        </button>
         {/* ── Content Area (Left/Main) ── */}
         <div className="flex-1 w-full flex flex-col gap-6">
           <div className="bg-white dark:bg-[#15151f] border border-[#DEDEDE] dark:border-white/10 rounded-3xl shadow-xl overflow-hidden min-h-[500px] flex flex-col">
@@ -642,28 +700,28 @@ function CourseViewer() {
                 </div>
 
                 {/* Navigation Bar */}
-                <div className="p-4 bg-[#F7F8FC] dark:bg-[#15151f] border-t border-[#DEDEDE] dark:border-white/10 flex items-center justify-between shrink-0">
+                <div className="p-3 sm:p-4 bg-[#F7F8FC] dark:bg-[#15151f] border-t border-[#DEDEDE] dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
                   <button
                     onClick={handlePrev}
                     disabled={activeIndex === 0}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-[#DEDEDE] dark:border-white/10 text-[#5A5A5A] dark:text-[#DADCEA] text-sm font-bold rounded-xl transition-all shadow-sm hover:-translate-x-1 hover:bg-[#F7F8FC] dark:hover:bg-white/10 disabled:opacity-50 disabled:hover:translate-x-0"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-[#DEDEDE] dark:border-white/10 text-[#5A5A5A] dark:text-[#DADCEA] text-sm font-bold rounded-xl transition-all shadow-sm hover:bg-[#F7F8FC] dark:hover:bg-white/10 disabled:opacity-50"
                   >
                     <ArrowLeft className="w-4 h-4" /> Previous
                   </button>
 
                   <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-[#5A5A5A] dark:text-[#DADCEA] hidden sm:block mb-2">
+                    <span className="text-xs font-bold text-[#5A5A5A] dark:text-[#DADCEA] mb-2">
                       {activeIndex + 1} / {totalLessons}
                     </span>
-                    {!completedSubmoduleIds.includes(activeSubmoduleId) ? (
+                    {!lessonIsComplete(activeSubmoduleId) ? (
                       <button
                         onClick={handleMarkComplete}
-                        className="px-4 py-1.5 bg-[#01AC9F]/10 text-[#01AC9F] border border-[#01AC9F]/20 rounded-lg text-sm font-bold hover:bg-[#01AC9F] hover:text-[#FFFFFF] transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-[#01AC9F]/10 text-[#01AC9F] border border-[#01AC9F]/20 rounded-lg text-sm font-bold hover:bg-[#01AC9F] hover:text-white transition-all flex items-center gap-2 shadow-sm"
                       >
                         <CheckCircle2 className="w-4 h-4" /> Mark Complete
                       </button>
                     ) : (
-                      <span className="px-4 py-1.5 text-[#01AC9F] text-sm font-bold flex items-center gap-2">
+                      <span className="px-4 py-2 bg-[#01AC9F] text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm">
                         <CheckCircle2 className="w-4 h-4" /> Completed
                       </span>
                     )}
@@ -672,7 +730,7 @@ function CourseViewer() {
                   <button
                     onClick={handleNext}
                     disabled={activeIndex === totalLessons - 1}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#6C1D5F] hover:bg-[#4A1E47] text-[#FFFFFF] text-sm font-bold rounded-xl transition-all shadow hover:translate-x-1 disabled:opacity-50 disabled:hover:translate-x-0"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#6C1D5F] hover:bg-[#4A1E47] text-white text-sm font-bold rounded-xl transition-all shadow disabled:opacity-50"
                   >
                     Next <ArrowRight className="w-4 h-4" />
                   </button>
@@ -695,18 +753,38 @@ function CourseViewer() {
         </div>
 
         {/* ── Curriculum Sidebar (Right) ── */}
-        <div className="w-full lg:w-[380px] xl:w-[420px] shrink-0">
+        {showCurriculum && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setShowCurriculum(false)}
+          />
+        )}
+        <div
+          className={clsx(
+            "w-full lg:w-[380px] xl:w-[420px] shrink-0",
+            showCurriculum
+              ? "fixed inset-y-0 right-0 z-50 w-[min(100%,380px)] shadow-2xl lg:static lg:shadow-none"
+              : "hidden lg:block",
+          )}
+        >
           <div
             className="bg-white dark:bg-[#15151f] border border-[#DEDEDE] dark:border-white/10 rounded-3xl shadow-lg lg:sticky lg:top-6 overflow-hidden flex flex-col"
             style={{ maxHeight: "calc(100vh - 48px)" }}
           >
-            <div className="p-6 border-b border-[#DEDEDE] dark:border-white/10 bg-[#F7F8FC] dark:bg-white/5 shrink-0">
-              <h3 className="text-lg font-extrabold text-[#000000] dark:text-[#FFFFFF]">
-                Curriculum
-              </h3>
-              <p className="text-xs font-medium text-[#5A5A5A] dark:text-[#DADCEA] mt-1">
-                {modules.length} Modules • {totalLessons} Lessons
-              </p>
+            <div className="p-6 border-b border-[#DEDEDE] dark:border-white/10 bg-[#F7F8FC] dark:bg-white/5 shrink-0 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-extrabold text-[#000000] dark:text-[#FFFFFF]">Curriculum</h3>
+                <p className="text-xs font-medium text-[#5A5A5A] dark:text-[#DADCEA] mt-1">
+                  {modules.length} Modules • {totalLessons} Lessons
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCurriculum(false)}
+                className="lg:hidden w-8 h-8 rounded-full flex items-center justify-center bg-white dark:bg-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -776,19 +854,25 @@ function CourseViewer() {
                             <div className="px-3 py-2 space-y-1 border-t border-[#DEDEDE]/50 dark:border-white/5">
                               {modSubmodules.map((sub) => {
                                 const isActive = sub.id === activeSubmoduleId;
+                                const completed = lessonIsComplete(sub.id);
                                 return (
                                   <button
                                     key={sub.id}
-                                    onClick={() => setActiveSubmoduleId(sub.id)}
+                                    onClick={() => {
+                                      setActiveSubmoduleId(sub.id);
+                                      setShowCurriculum(false);
+                                    }}
                                     className={clsx(
                                       "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all group",
                                       isActive
-                                        ? "bg-[#6C1D5F] text-[#FFFFFF] shadow-md shadow-[#6C1D5F]/20 scale-[0.98]"
-                                        : "hover:bg-[#F7F8FC] dark:hover:bg-white/5 text-[#000000] dark:text-[#FFFFFF]",
+                                        ? "bg-[#6C1D5F] text-[#FFFFFF] shadow-md shadow-[#6C1D5F]/20"
+                                        : completed
+                                          ? "bg-[#01AC9F]/10 border border-[#01AC9F]/25 text-[#01AC9F]"
+                                          : "hover:bg-[#F7F8FC] dark:hover:bg-white/5 text-[#000000] dark:text-[#FFFFFF]",
                                     )}
                                   >
                                     <div className="shrink-0 flex items-center justify-center">
-                                      {completedSubmoduleIds.includes(sub.id) ? (
+                                      {completed ? (
                                         <CheckCircle2
                                           className={clsx(
                                             "w-5 h-5",
@@ -806,7 +890,9 @@ function CourseViewer() {
                                         "text-sm font-bold truncate flex-1",
                                         isActive
                                           ? "text-[#FFFFFF]"
-                                          : "text-[#5A5A5A] dark:text-[#DADCEA] group-hover:text-[#000000] dark:group-hover:text-[#FFFFFF]",
+                                          : completed
+                                            ? "text-[#01AC9F]"
+                                            : "text-[#5A5A5A] dark:text-[#DADCEA] group-hover:text-[#000000] dark:group-hover:text-[#FFFFFF]",
                                       )}
                                     >
                                       {sub.title}
@@ -830,6 +916,12 @@ function CourseViewer() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showCert && (
+          <CertificateModal course={course} onClose={() => setShowCert(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
