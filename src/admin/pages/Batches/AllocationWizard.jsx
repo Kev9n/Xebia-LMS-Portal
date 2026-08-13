@@ -4,7 +4,9 @@ import {
   Users, BookOpen, GraduationCap, CheckCircle, ArrowRight, ArrowLeft,
   Search, Sparkles, User, Bookmark, Clock, MapPin,
 } from "lucide-react";
-import { AllocationService, UserService, BatchService, CourseService } from "@/services/api";
+import { AllocationService, UserService, BatchService, CourseService, EnrollmentService } from "@/services/api";
+import { enrollBatchStudentsInCourses } from "@/lib/admin-catalog-store";
+import { useAppStore } from "../../store/useAppStore";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useRouter } from "@tanstack/react-router";
 import { clsx } from "clsx";
@@ -19,6 +21,7 @@ const STEPS = [
 
 export default function AllocationWizard() {
   const router = useRouter();
+  const { addToast } = useAppStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -142,7 +145,24 @@ export default function AllocationWizard() {
 
       await AllocationService.createBulkAllocations(allocations);
 
-      // Send notification to the trainer
+      const studentIds = selectedBatch.students || [];
+      const courseIds = selectedCourses.map((c) => c.id);
+      enrollBatchStudentsInCourses(courseIds, studentIds);
+
+      for (const course of selectedCourses) {
+        for (const studentId of studentIds) {
+          try {
+            await EnrollmentService.enroll(course.id, { userId: studentId });
+          } catch {
+            /* local enrollment already recorded */
+          }
+        }
+      }
+
+      addToast(
+        `Allocated ${selectedCourses.length} course(s) to ${selectedTrainer.name}. ${studentIds.length} student(s) enrolled.`,
+        "success",
+      );
       try {
         const courseNames = selectedCourses.map((c) => c.title).join(", ");
         const notifications = JSON.parse(localStorage.getItem("notifications") || "[]");
@@ -464,6 +484,15 @@ export default function AllocationWizard() {
           {/* Step 4: Review */}
           {currentStep === 4 && (
             <div className="space-y-4">
+              <div className="rounded-xl border border-[#01AC9F]/30 bg-[#01AC9F]/5 px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
+                <p className="font-bold text-[#01AC9F] mb-1">How enrollment works</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs sm:text-sm">
+                  <li>Admin allocates course(s) to a <strong>trainer</strong> and <strong>batch</strong>.</li>
+                  <li>All students already in that batch are <strong>auto-enrolled</strong> in the course — no separate student allocation step.</li>
+                  <li>The trainer creates assessments for the batch; students submit from Assessments.</li>
+                  <li>Trainer grades written answers at <strong>Trainer → Evaluation</strong>.</li>
+                </ol>
+              </div>
               {/* Allocation Summary + Schedule side by side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left: Allocation Summary */}
@@ -477,6 +506,12 @@ export default function AllocationWizard() {
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-500 w-16 shrink-0">Trainer</span>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedTrainer?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-500 w-16 shrink-0">Students</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                        {(selectedBatch?.students || []).length} auto-enrolled
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-500 w-16 shrink-0">Courses</span>

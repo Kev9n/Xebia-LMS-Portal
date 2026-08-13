@@ -1,4 +1,5 @@
 import { TEMPORARY_STUDENT_ID } from "@/config/student-identity";
+import { getSessionUserId, resolveApiBaseUrl } from "@/lib/api-config";
 import {
   getProgressSummary,
   markSubmoduleComplete,
@@ -45,22 +46,26 @@ import {
   getDemoEnrolledCourses,
   getReactCourseHierarchy,
 } from "@/lib/demo-seed-data";
+import { enrollBatchStudentsInCourses, getLocalEnrollmentsForStudent } from "@/lib/admin-catalog-store";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = resolveApiBaseUrl();
 
 /**
  * Standard fetch wrapper that automatically handles JSON and error states
  */
 async function fetchApi(endpoint, options = {}) {
+  const userId = options.userId || getSessionUserId(TEMPORARY_STUDENT_ID);
   const headers = {
     "Content-Type": "application/json",
     "X-Tenant-Id": DEMO_TENANT_ID,
-    "X-User-Id": TEMPORARY_STUDENT_ID,
+    "X-User-Id": userId,
     ...options.headers,
   };
 
+  const { userId: _omit, ...fetchOptions } = options;
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
@@ -81,7 +86,8 @@ async function fetchApi(endpoint, options = {}) {
 }
 
 export const EnrollmentService = {
-  enroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "POST" }),
+  enroll: (courseId, options = {}) =>
+    fetchApi(`/enrollments/${courseId}`, { method: "POST", userId: options.userId }),
   unenroll: (courseId) => fetchApi(`/enrollments/${courseId}`, { method: "DELETE" }),
   getStatus: async (courseId) => {
     try {
@@ -97,22 +103,45 @@ export const EnrollmentService = {
     };
   },
   getMyCourses: async () => {
+    const userId = getSessionUserId(TEMPORARY_STUDENT_ID);
     try {
-      const data = await fetchApi("/enrollments/my-courses");
+      const data = await fetchApi("/enrollments/my-courses", { userId });
       if (Array.isArray(data) && data.length > 0) {
         return data.map((item) => {
           const courseId = item.id || item.courseId;
           return {
             ...item,
             id: courseId,
-            progress: Math.max(item.progress ?? 0, getCourseProgressPercent(courseId)),
+            progress: Math.max(item.progress ?? 0, getCourseProgressPercent(courseId, userId)),
           };
         });
       }
     } catch {
-      /* fall through to demo enrollments */
+      /* fall through */
     }
-    return getDemoEnrolledCourses();
+
+    const localEnrollments = getLocalEnrollmentsForStudent(userId);
+    const demoCourses = getDemoEnrolledCourses();
+    if (localEnrollments.length > 0) {
+      const merged = getMergedCourses(null);
+      const fromLocal = localEnrollments.map((e) => {
+        const course = merged.find((c) => String(c.id) === String(e.courseId));
+        return {
+          ...(course || {}),
+          id: e.courseId,
+          progress: Math.max(e.progress ?? 0, getCourseProgressPercent(e.courseId, userId)),
+          isEnrolled: true,
+        };
+      });
+      const seen = new Set(fromLocal.map((c) => String(c.id)));
+      const combined = [
+        ...fromLocal,
+        ...demoCourses.filter((c) => !seen.has(String(c.id))),
+      ];
+      return combined;
+    }
+
+    return demoCourses;
   },
 };
 

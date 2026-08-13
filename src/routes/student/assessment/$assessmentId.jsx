@@ -1,32 +1,72 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Clock, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { toast } from "sonner";
+import { useLMS } from "../../../context/LMSContext";
 
 export const Route = createFileRoute("/student/assessment/$assessmentId")({
   component: ExamTakingView,
 });
 
-import { useLMS } from "../../../context/LMSContext";
-
 function ExamTakingView() {
   const { assessmentId } = Route.useParams();
   const navigate = useNavigate();
-  const { assessments } = useLMS();
+  const { assessments, currentUser, startAssessment, submitAssessment } = useLMS();
+  const submissionRef = useRef(null);
 
   const assessment = assessments.find((a) => String(a.id) === String(assessmentId));
   const questions = assessment?.questions || [];
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(45 * 60); // 45 mins
+  const [textAnswers, setTextAnswers] = useState({});
+  const [timeLeft, setTimeLeft] = useState((assessment?.duration || 45) * 60);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Timer logic
   useEffect(() => {
-    if (isSubmitted || timeLeft <= 0) return;
+    if (assessment && currentUser && !submissionRef.current) {
+      submissionRef.current = startAssessment(assessment.id, currentUser.id);
+    }
+  }, [assessment, currentUser, startAssessment]);
+
+  const handleSubmit = useCallback(() => {
+    if (!assessment || !currentUser || isSubmitted) return;
+
+    const sub = submissionRef.current || startAssessment(assessment.id, currentUser.id);
+    const answersPayload = questions.map((q) => {
+      if (q.type === "short_answer" || q.type === "paragraph" || q.type === "assignment") {
+        return { questionId: q.id, answer: textAnswers[q.id] || "" };
+      }
+      const idx = answers[q.id];
+      return {
+        questionId: q.id,
+        answer: idx !== undefined && q.options ? String(idx) : answers[q.id],
+      };
+    });
+
+    submitAssessment(sub.id, answersPayload);
+    setIsSubmitted(true);
+    toast.success("Assessment submitted successfully!");
+
+    setTimeout(() => {
+      navigate({ to: "/student/results" });
+    }, 1500);
+  }, [
+    assessment,
+    currentUser,
+    isSubmitted,
+    questions,
+    answers,
+    textAnswers,
+    startAssessment,
+    submitAssessment,
+    navigate,
+  ]);
+
+  useEffect(() => {
+    if (isSubmitted || timeLeft <= 0 || !questions.length) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -40,7 +80,7 @@ function ExamTakingView() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isSubmitted, timeLeft]);
+  }, [isSubmitted, timeLeft, questions.length, handleSubmit]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -60,21 +100,16 @@ function ExamTakingView() {
     });
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
-    toast.success("Assessment submitted successfully!");
-
-    // Simulate calculating results and redirecting
-    setTimeout(() => {
-      navigate({ to: "/student/results" });
-    }, 2000);
-  };
-
   const currentQ = questions[currentIdx];
   const isLastQ = currentIdx === questions.length - 1;
   const isFirstQ = currentIdx === 0;
+  const isTextQuestion =
+    currentQ?.type === "short_answer" ||
+    currentQ?.type === "paragraph" ||
+    currentQ?.type === "assignment";
 
-  const attemptedCount = Object.keys(answers).length;
+  const attemptedCount =
+    Object.keys(answers).length + Object.values(textAnswers).filter(Boolean).length;
   const progressPercent = questions.length > 0 ? (attemptedCount / questions.length) * 100 : 0;
 
   if (!questions || questions.length === 0) {
@@ -172,12 +207,23 @@ function ExamTakingView() {
             </div>
 
             <h2 className="text-2xl font-bold text-foreground leading-relaxed mb-8">
-              {currentQ.question}
+              {currentQ.question || currentQ.text}
             </h2>
 
+            {isTextQuestion ? (
+              <textarea
+                value={textAnswers[currentQ.id] || ""}
+                onChange={(e) =>
+                  setTextAnswers((prev) => ({ ...prev, [currentQ.id]: e.target.value }))
+                }
+                rows={6}
+                placeholder="Type your answer here..."
+                className="w-full rounded-xl border border-border bg-background p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            ) : (
             <div className="space-y-4">
               <AnimatePresence mode="wait">
-                {currentQ.options.map((option, idx) => {
+                {(currentQ.options || []).map((option, idx) => {
                   const isSelected = answers[currentQ.id] === idx;
                   return (
                     <motion.div
@@ -219,6 +265,7 @@ function ExamTakingView() {
                 })}
               </AnimatePresence>
             </div>
+            )}
           </div>
 
           {/* Navigation Footer */}
@@ -254,7 +301,11 @@ function ExamTakingView() {
           <h3 className="font-extrabold text-foreground mb-4">Questions</h3>
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-2">
             {questions.map((q, idx) => {
-              const isAttempted = answers[q.id] !== undefined;
+              const isTextQ =
+                q.type === "short_answer" || q.type === "paragraph" || q.type === "assignment";
+              const isAttempted = isTextQ
+                ? Boolean(textAnswers[q.id]?.trim())
+                : answers[q.id] !== undefined;
               const isActive = currentIdx === idx;
 
               return (

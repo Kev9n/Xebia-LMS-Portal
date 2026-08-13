@@ -13,6 +13,7 @@ export const DEMO_IDS = {
   courseReact: "50000000-0000-0000-0000-000000000002",
   batchFrontend: "60000000-0000-0000-0000-000000000001",
   assessmentReactMod1: "70000000-0000-0000-0000-000000000001",
+  assessmentReactWritten: "70000000-0000-0000-0000-000000000002",
   submissionReactMod1: "80000000-0000-0000-0000-000000000001",
 };
 
@@ -183,6 +184,37 @@ export const DEMO_ASSESSMENTS = [
         options: ["Modules", "Components", "Controllers", "Services"],
         correctAnswer: "Components",
         marks: 2,
+      },
+      {
+        id: "q-react-jsx-3",
+        type: "short_answer",
+        question:
+          "In your own words, explain what JSX is and why React uses it instead of plain HTML strings.",
+        marks: 6,
+      },
+    ],
+  },
+  {
+    id: DEMO_IDS.assessmentReactWritten,
+    title: "React.js - Module 1 Written Assignment",
+    slug: "react-js-module-1-written-assignment",
+    status: "published",
+    type: "assignment",
+    batches: [DEMO_IDS.batchFrontend],
+    startDate,
+    endDate,
+    duration: 45,
+    marks: 20,
+    passingMarks: 12,
+    manualGrade: true,
+    createdBy: DEMO_IDS.teacherKevin,
+    questions: [
+      {
+        id: "q-react-assignment-1",
+        type: "assignment",
+        question:
+          "Build a short write-up (150–250 words) describing how you would structure a React component for a login form. Include state, validation, and submission handling.",
+        marks: 20,
       },
     ],
   },

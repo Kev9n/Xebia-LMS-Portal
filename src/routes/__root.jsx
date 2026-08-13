@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import "@/admin/index.css";
 import { LMSProvider } from "../context/LMSContext";
+import { BackendHealthProvider } from "../context/BackendHealthContext";
 import React from "react";
 
 function NotFoundComponent() {
@@ -198,9 +199,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LMSProvider>
-        <Outlet />
-      </LMSProvider>
+      <BackendHealthProvider>
+        <LMSProvider>
+          <Outlet />
+        </LMSProvider>
+      </BackendHealthProvider>
     </QueryClientProvider>
   );
 }

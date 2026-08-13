@@ -101,14 +101,7 @@ function AssessmentsPage() {
   };
 
   const handleStartAttempt = (id) => {
-    const as = (assessments || []).find((x) => x.id === id);
-    if (!as) return;
-    const slug = as.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "assessment";
-    if (as.type === "coding") {
-      navigate({ to: `/student/take-coding/${slug}` });
-    } else {
-      navigate({ to: `/student/take/${slug}` });
-    }
+    navigate({ to: `/student/assessment/${id}` });
   };
 
   const handleViewResult = (sId) => {

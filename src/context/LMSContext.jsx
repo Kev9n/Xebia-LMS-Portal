@@ -175,6 +175,7 @@ export const LMSProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem("assessments", JSON.stringify(assessments));
+    localStorage.setItem("lms_assessments", JSON.stringify(assessments));
 
     // Synchronize codingAssessments, codingProblems, codingTemplates, codingTestCases
     const codAs = assessments.filter((a) => a.type === "coding");
@@ -207,6 +208,7 @@ export const LMSProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem("submissions", JSON.stringify(submissions));
+    localStorage.setItem("lms_submissions", JSON.stringify(submissions));
   }, [submissions]);
 
   useEffect(() => {
@@ -752,6 +754,7 @@ export const LMSProvider = ({ children }) => {
     let finalStudentId = "";
     let finalPercentage = 0;
     let asTitle = "";
+    let evaluatedSubmission = null;
 
     setSubmissions((prev) =>
       prev.map((sub) => {
@@ -762,7 +765,6 @@ export const LMSProvider = ({ children }) => {
 
           const updatedAnswers = sub.answers.map((ans) => {
             const qId = ans.questionId;
-            const q = asObj.questions.find((quest) => quest.id === qId);
             return {
               ...ans,
               marksAwarded:
@@ -773,14 +775,13 @@ export const LMSProvider = ({ children }) => {
             };
           });
 
-          // Sum total manual + auto scores
           const totalScore = updatedAnswers.reduce((sum, ans) => sum + (ans.marksAwarded || 0), 0);
           const percentage = asObj.marks > 0 ? Math.round((totalScore / asObj.marks) * 100) : 0;
 
           finalStudentId = sub.studentId;
           finalPercentage = percentage;
 
-          return {
+          evaluatedSubmission = {
             ...sub,
             answers: updatedAnswers,
             score: totalScore,
@@ -789,10 +790,17 @@ export const LMSProvider = ({ children }) => {
             remarks: overallRemarks,
             evaluatedBy: currentUser?.id || "T1",
           };
+          return evaluatedSubmission;
         }
         return sub;
       }),
     );
+
+    if (evaluatedSubmission) {
+      SubmissionService.updateSubmission(evaluatedSubmission.id, evaluatedSubmission).catch(
+        console.error,
+      );
+    }
 
     // Update student performance averages
     if (finalStudentId) {

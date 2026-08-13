@@ -19,6 +19,7 @@ function readStore() {
           hierarchies: {},
           allocations: [],
           batches: [],
+          enrollments: [],
           deletedCategoryIds: [],
           deletedCourseIds: [],
         };
@@ -29,6 +30,7 @@ function readStore() {
       hierarchies: {},
       allocations: [],
       batches: [],
+      enrollments: [],
       deletedCategoryIds: [],
       deletedCourseIds: [],
     };
@@ -505,6 +507,41 @@ export function deleteAllocationLocal(id) {
   writeStore(store);
   setAdminOfflineMode(true);
   return true;
+}
+
+export function getLocalEnrollmentsForStudent(studentId) {
+  const store = readStore();
+  return (store.enrollments || []).filter((e) => String(e.studentId) === String(studentId));
+}
+
+/** Admin allocates course to trainer+batch → enroll all batch students in those courses. */
+export function enrollBatchStudentsInCourses(courseIds, studentIds) {
+  const store = readStore();
+  store.enrollments = store.enrollments || [];
+  const created = [];
+
+  for (const courseId of courseIds) {
+    for (const studentId of studentIds) {
+      const exists = store.enrollments.some(
+        (e) => String(e.courseId) === String(courseId) && String(e.studentId) === String(studentId),
+      );
+      if (exists) continue;
+      const enrollment = {
+        id: newId(),
+        courseId,
+        studentId,
+        status: "ACTIVE",
+        progress: 0,
+        isEnrolled: true,
+        _local: true,
+      };
+      store.enrollments.push(enrollment);
+      created.push(enrollment);
+    }
+  }
+
+  writeStore(store);
+  return created;
 }
 
 export function getDemoUsers(role) {
