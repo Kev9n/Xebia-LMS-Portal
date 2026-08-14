@@ -4,8 +4,7 @@
 
 > **Enterprise-grade Learning Management System** — Built with React 19 + 6 Spring Boot Microservices + PostgreSQL
 
-[![Live Frontend](https://img.shields.io/badge/🌐_Live_Frontend-Vercel-black?style=for-the-badge)](https://xebia-enterprise-lms.vercel.app)
-[![API Gateway](https://img.shields.io/badge/⚙️_API_Gateway-Render-46E3B7?style=for-the-badge)](https://xebia-api-gateway-mritunjai.onrender.com)
+[![Live Frontend](https://img.shields.io/badge/🌐_Live_Frontend-Vercel-black?style=for-the-badge)](https://xebia-lms-portal-gules.vercel.app/)
 [![Load Tested](https://img.shields.io/badge/🔥_Load_Tested-50_Concurrent-FF6200?style=for-the-badge)](#-load-testing--performance)
 
 <br/>
@@ -18,13 +17,13 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4.2-06B6D4?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue)
-![Last Commit](https://img.shields.io/github/last-commit/mritunjai-prog/Xebia-Enterprise-LMS)
+![Last Commit](https://img.shields.io/github/last-commit/Kev9n/Xebia-LMS-Portal)
 
 <br/>
 
 An enterprise LMS featuring **three portal roles** (Admin, Trainer, Student), a microservices backend with **6 Spring Boot services**, a React 19 frontend with TanStack Router, and a Docker-based development environment. Built for Xebia to deliver structured learning with assessments, course management, batch allocation, event hosting, and rich analytics dashboards.
 
-**[🚀 Live Demo](https://xebia-enterprise-lms.vercel.app)** &nbsp;·&nbsp; **[🐛 Report Bug](https://github.com/mritunjai-prog/Xebia-Enterprise-LMS/issues)** &nbsp;·&nbsp; **[✨ Request Feature](https://github.com/mritunjai-prog/Xebia-Enterprise-LMS/issues)**
+**[🚀 Live Demo](https://xebia-lms-portal-gules.vercel.app/)** &nbsp;·&nbsp; **[🐛 Report Bug](https://github.com/Kev9n/Xebia-LMS-Portal/issues)** &nbsp;·&nbsp; **[✨ Request Feature](https://github.com/Kev9n/Xebia-LMS-Portal/issues)**
 
 </div>
 
@@ -35,14 +34,9 @@ An enterprise LMS featuring **three portal roles** (Admin, Trainer, Student), a 
 
 | Service | URL |
 |---------|-----|
-| Frontend (Vercel) | [xebia-enterprise-lms.vercel.app](https://xebia-enterprise-lms.vercel.app) |
-| API Gateway | [xebia-api-gateway-mritunjai.onrender.com](https://xebia-api-gateway-mritunjai.onrender.com) |
-| Course Service | [xebia-course-service-mritunjai.onrender.com](https://xebia-course-service-mritunjai.onrender.com) |
-| User Service | [xebia-user-service-mritunjai.onrender.com](https://xebia-user-service-mritunjai.onrender.com) |
-| Batch Service | [xebia-batch-service-mritunjai.onrender.com](https://xebia-batch-service-mritunjai.onrender.com) |
-| Assessment Service | [xebia-assessment-service-mritunjai.onrender.com](https://xebia-assessment-service-mritunjai.onrender.com) |
-| Event Service | [xebia-event-service-mritunjai.onrender.com](https://xebia-event-service-mritunjai.onrender.com) |
-| PostgreSQL | `xebia-postgres-mritunjai` (Render managed) |
+| Frontend (Vercel) | [xebia-lms-portal-gules.vercel.app](https://xebia-lms-portal-gules.vercel.app/) |
+| Backend Services | Deployed on Render (see deployment section) |
+| PostgreSQL | Managed database (Render) |
 
 ---
 
@@ -210,8 +204,8 @@ sequenceDiagram
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/mritunjai-prog/Xebia-Enterprise-LMS.git
-cd Xebia-Enterprise-LMS
+git clone https://github.com/Kev9n/Xebia-LMS-Portal.git
+cd Xebia-LMS-Portal
 ```
 
 **2. Start the backend services (Docker)**
@@ -587,7 +581,7 @@ The full API suite was **load tested with 50 concurrent requests** per endpoint 
 
 > Event Service enforces `registrationDeadline < startDateTime`. Sending an invalid payload returns `HTTP 400 Bad Request` with a clear error message — proving backend validation works correctly under load.
 
-📄 **[View Full API Testing Report (Web View)](https://htmlpreview.github.io/?https://github.com/mritunjai-prog/Xebia-Enterprise-LMS/blob/main/Xebia_LMS_API_Documentation.html)** — Open in browser for the complete load test documentation with sample payloads, error analysis, and CRUD matrices.
+📄 **[View Full API Testing Report (Web View)](https://htmlpreview.github.io/?https://github.com/Kev9n/Xebia-LMS-Portal/blob/main/Xebia_LMS_API_Documentation.html)** — Open in browser for the complete load test documentation with sample payloads, error analysis, and CRUD matrices.
 
 ---
 
@@ -670,8 +664,7 @@ refactor: Replace MetricCard with KpiCard for consistent styling
 
 | Name | Role | GitHub |
 |------|------|--------|
-| X1 | Full-Stack Developer / Project Lead |
-| X2 | Full-Stack Developer | 
+| Kevin | Full-Stack Developer / Project Lead | [Kev9n](https://github.com/Kev9n) | 
 
 
 ---
